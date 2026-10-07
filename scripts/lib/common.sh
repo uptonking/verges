@@ -54,7 +54,7 @@ warn() { echo "WARN: $*" >&2; }
 # NOTE: glob must stay unquoted so it expands.
 cert_path() {
 	# shellcheck disable=SC2145
-	ls data/caddy/certificates/*/"$VERGES_HOST"/"$VERGES_HOST".crt 2>/dev/null | head -n1 || true
+	ls data/caddy/caddy/certificates/*/"$VERGES_HOST"/"$VERGES_HOST".crt 2>/dev/null | head -n1 || true
 }
 
 check_dns() {

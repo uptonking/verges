@@ -14,8 +14,8 @@ auth:
 # (mtime is checked on every handshake). The path is deterministic because
 # the Caddyfile pins the Let's Encrypt ACME issuer.
 tls:
-  cert: /caddy-data/certificates/acme-v02.api.letsencrypt.org-directory/verges.${DOMAIN_NAME}/verges.${DOMAIN_NAME}.crt
-  key: /caddy-data/certificates/acme-v02.api.letsencrypt.org-directory/verges.${DOMAIN_NAME}/verges.${DOMAIN_NAME}.key
+  cert: /caddy-data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/verges.${DOMAIN_NAME}/verges.${DOMAIN_NAME}.crt
+  key: /caddy-data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/verges.${DOMAIN_NAME}/verges.${DOMAIN_NAME}.key
 
 # Camouflage: forward non-proxy traffic to caddy in-network, masquerading
 # as an HTTPS site. insecure: true because the "caddy" site uses tls
