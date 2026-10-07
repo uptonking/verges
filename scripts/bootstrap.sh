@@ -95,7 +95,8 @@ ufw allow 80/tcp >/dev/null                       # ACME HTTP-01 + redirect
 ufw allow 443/tcp >/dev/null                      # HTTPS (caddy)
 ufw allow "${VERGES_PORT}/udp" >/dev/null         # Hysteria2 main port
 if [ -n "${VERGES_HOP_RANGE:-}" ]; then
-	ufw allow "${VERGES_HOP_RANGE}/udp" >/dev/null # Hysteria2 port hopping range
+	# ufw uses a colon for ranges (e.g. 20000:30000/udp).
+	ufw allow "${VERGES_HOP_RANGE%-*}:${VERGES_HOP_RANGE#*-}/udp" >/dev/null # Hysteria2 port hopping range
 fi
 echo "ufw rules ensured: 80/tcp, 443/tcp, ${VERGES_PORT}/udp${VERGES_HOP_RANGE:+, ${VERGES_HOP_RANGE}/udp}"
 
