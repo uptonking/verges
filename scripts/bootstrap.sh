@@ -91,10 +91,13 @@ check_dns
 # NOTE: docker-published ports bypass ufw (docker's iptables rules run
 # before ufw's). These rules document intent and protect the host level
 # if that behavior ever changes. Never remove the SSH rule.
-ufw allow 80/tcp >/dev/null           # ACME HTTP-01 + redirect
-ufw allow 443/tcp >/dev/null          # HTTPS (caddy)
-ufw allow "${VERGES_PORT}/udp" >/dev/null # Hysteria2 (verges)
-echo "ufw rules ensured: 80/tcp, 443/tcp, ${VERGES_PORT}/udp"
+ufw allow 80/tcp >/dev/null                       # ACME HTTP-01 + redirect
+ufw allow 443/tcp >/dev/null                      # HTTPS (caddy)
+ufw allow "${VERGES_PORT}/udp" >/dev/null         # Hysteria2 main port
+if [ -n "${VERGES_HOP_RANGE:-}" ]; then
+	ufw allow "${VERGES_HOP_RANGE}/udp" >/dev/null # Hysteria2 port hopping range
+fi
+echo "ufw rules ensured: 80/tcp, 443/tcp, ${VERGES_PORT}/udp${VERGES_HOP_RANGE:+, ${VERGES_HOP_RANGE}/udp}"
 
 # --- generate + start ---
 gen_configs

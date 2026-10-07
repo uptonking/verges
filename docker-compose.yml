@@ -33,6 +33,9 @@ services:
     restart: always
     ports:
       - "${VERGES_PORT:-443}:443/udp"
+      - "${VERGES_HOP_RANGE:-20000-30000}:${VERGES_HOP_RANGE:-20000-30000}/udp"
+    cap_add:
+      - NET_ADMIN # required for server-side port hopping DNAT rules
     volumes:
       - ./data/caddy:/caddy-data:ro # Caddy cert storage, read-only
       - ./services/verges:/etc/hysteria:ro

@@ -27,9 +27,9 @@ set -a
 set +a
 
 : "${DOMAIN_NAME:?DOMAIN_NAME must be set in $CONFIG_ENV}"
-: "${VPS_IP:?VPS_IP must be set in $CONFIG_ENV}"
 : "${SSL_EMAIL:?SSL_EMAIL must be set in $SECRETS_ENV}"
 : "${VERGES_PORT:=443}"
+: "${VERGES_HOP_RANGE:=20000-30000}"
 : "${CADDY_IMAGE:=caddy:2.10.2}"
 : "${VERGES_IMAGE:=tobyxdd/hysteria:v2.13.0}"
 
@@ -61,9 +61,7 @@ check_dns() {
 	local resolved
 	resolved="$(getent hosts "$VERGES_HOST" 2>/dev/null | awk '{print $1}' | head -n1 || true)"
 	if [ -z "$resolved" ]; then
-		warn "$VERGES_HOST has no DNS record — expected A record -> $VPS_IP. Certificate issuance will fail."
-	elif [ "$resolved" != "$VPS_IP" ]; then
-		warn "$VERGES_HOST resolves to $resolved but VPS_IP=$VPS_IP in config.env. Certificate issuance may fail or hit the wrong server."
+		warn "$VERGES_HOST has no DNS A record. Certificate issuance will fail until the DNS record points to this VPS."
 	else
 		echo "DNS OK: $VERGES_HOST -> $resolved"
 	fi
@@ -75,7 +73,7 @@ gen_configs() {
 		exit 1
 	}
 	if [ "$VERGES_ENABLED" -eq 1 ]; then
-		envsubst '${DOMAIN_NAME} ${VERGES_PASSWORD}' \
+		envsubst '${DOMAIN_NAME} ${VERGES_PASSWORD} ${VERGES_HOP_RANGE}' \
 			<services/verges/config.yaml.template \
 			>services/verges/config.yaml
 		chmod 600 services/verges/config.yaml

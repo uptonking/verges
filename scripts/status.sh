@@ -15,6 +15,9 @@ echo
 echo "=== listeners (host) ==="
 ss -tlnp | grep -E ':(80|443)\b' || true
 ss -ulnp | grep -E ":${VERGES_PORT}\b" || true
+if [ -n "${VERGES_HOP_RANGE:-}" ]; then
+	ss -ulnp | grep -E ":(${VERGES_HOP_RANGE%-*}|${VERGES_HOP_RANGE#*-})\b" || true
+fi
 
 echo
 if [ -n "$(cert_path)" ]; then

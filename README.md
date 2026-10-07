@@ -9,7 +9,7 @@ Reproducible Docker stack for a single VPS: [Caddy](https://caddyserver.com/) (a
                           |
         +-----------------+------------------+
         |                 |                  |
-   TCP 80/443        UDP 443            (any client)
+   TCP 80/443   UDP 443 + 20000-30000    (any client)
         |                 |                  |
   +-----v-----+    +------v------+           |
   |   caddy   |    |    verges   |           |
@@ -28,7 +28,7 @@ Reproducible Docker stack for a single VPS: [Caddy](https://caddyserver.com/) (a
 ```
 
 - **caddy** always runs: TCP 80 (ACME HTTP-01 + redirects) and TCP 443 (HTTPS, h1/h2 — HTTP/3 is disabled because UDP 443 belongs to verges).
-- **verges** (Hysteria 2): UDP 443, enabled/disabled via compose profiles. Unauthenticated traffic is masqueraded to caddy in-network (`It works!` page), so the endpoint looks like a normal HTTPS site.
+- **verges** (Hysteria 2): UDP 443 + server-side port hopping range (default `20000-30000/udp`), enabled/disabled via compose profiles. Unauthenticated traffic is masqueraded to caddy in-network (`It works!` page), so the endpoint looks like a normal HTTPS site.
 
 ## Quickstart (fresh VPS)
 
@@ -62,7 +62,7 @@ Plain `docker compose` also works for inspection but misses `config.env` (profil
 
 | File | Committed? | Contents |
 |---|---|---|
-| `config.env` | yes | Desired state: `COMPOSE_PROFILES`, `DOMAIN_NAME`, `VPS_IP`, `VERGES_PORT`, image pins |
+| `config.env` | yes | Desired state: `COMPOSE_PROFILES`, `DOMAIN_NAME`, `VERGES_PORT`, `VERGES_HOP_RANGE`, image pins |
 | `.env` | no (generated) | Secrets only: `SSL_EMAIL`, `VERGES_PASSWORD` |
 | `caddy/` | yes | Caddyfile + per-site files (`import sites/*.caddy`) |
 | `services/verges/config.yaml.template` | yes | Hysteria config template (envsubst → generated `config.yaml`, gitignored) |
@@ -88,7 +88,7 @@ Re-enable with `COMPOSE_PROFILES=verges`.
 
 ### Changing the VPS IP
 
-Update `VPS_IP` in `config.env` (used only for DNS sanity checks) and the DNS A record. Data (certificates) can be migrated manually by copying `data/`; otherwise a fresh bootstrap re-issues everything.
+Update only the DNS A record for `verges.<domain>` to point to the new VPS IP. The repo no longer stores the VPS IP. Data (certificates) can be migrated manually by copying `data/`; otherwise a fresh bootstrap on the new VPS re-issues everything.
 
 ## Client setup
 
@@ -97,6 +97,8 @@ Update `VPS_IP` in `config.env` (used only for DNS sanity checks) and the DNS A 
 ```
 hysteria2://<password>@verges.<domain>:443?sni=verges.<domain>&insecure=0
 ```
+
+For clients that support port hopping (e.g. Clash.Meta), also configure `ports: 20000-30000` and `hop-interval: 30`.
 
 Works with any Hysteria2 client (official CLI, sing-box, Clash.Meta, Stash, Shadowrocket, ...).
 

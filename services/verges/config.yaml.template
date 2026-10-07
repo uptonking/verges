@@ -3,7 +3,9 @@
 # Hysteria has no env-var support, hence the template.
 
 # QUIC listener inside the container (published as ${VERGES_PORT}/udp).
-listen: :443
+# Port hopping range is appended after a comma; the server uses iptables/nftables
+# DNAT to redirect the range back to the main port (requires NET_ADMIN).
+listen: :443,${VERGES_HOP_RANGE}
 
 auth:
   type: password
