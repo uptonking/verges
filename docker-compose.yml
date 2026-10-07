@@ -26,14 +26,14 @@ services:
 
   verges:
     container_name: verges
-    hostname: verges
     image: ${VERGES_IMAGE:-tobyxdd/hysteria:v2.13.0}
     profiles:
       - verges
     restart: always
-    ports:
-      - "${VERGES_PORT:-443}:443/udp"
-      - "${VERGES_HOP_RANGE:-20000-30000}:${VERGES_HOP_RANGE:-20000-30000}/udp"
+    # Host networking is required for port hopping: it lets hysteria bind
+    # UDP 443 + the hopping range directly on the host and install its own
+    # iptables/nftables DNAT rules (via NET_ADMIN), avoiding docker-proxy.
+    network_mode: host
     cap_add:
       - NET_ADMIN # required for server-side port hopping DNAT rules
     volumes:
@@ -57,8 +57,6 @@ services:
           sleep 2
         done
         exec hysteria server -c /etc/hysteria/config.yaml
-    networks:
-      - shared_network
     healthcheck:
       test: ["CMD", "pgrep", "-x", "hysteria"]
       interval: 30s

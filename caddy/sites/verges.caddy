@@ -15,10 +15,10 @@ verges.{$DOMAIN_NAME} {
 	}
 }
 
-# Internal masquerade backend for Hysteria2 (in-network over shared_network).
-# Hysteria forwards unauthenticated/non-proxy traffic here:
-#   masquerade.proxy.url = https://caddy  (rewriteHost: true, insecure: true)
-caddy {
+# Internal masquerade backend for Hysteria2.
+# The verges container uses host networking, so it reaches caddy via
+# 127.0.0.1:443. rewriteHost makes caddy's host matcher match.
+127.0.0.1 {
 	tls internal
 	respond "<html><body><h1>It works!</h1></body></html>" 200
 }

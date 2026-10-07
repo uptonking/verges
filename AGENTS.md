@@ -33,4 +33,5 @@ Reproducible single-node VPS Docker services stack. Caddy is the TLS entrypoint 
 - Hysteria hot-reloads certificates (mtime checked per handshake); no restart needed on cert renewal.
 - Reboot recovery relies on `restart: always` + `systemd enable docker`; profiles do not block daemon-level restarts.
 - Extend `gen_configs()` in `scripts/lib/common.sh` when adding a new service with templated config.
-- Port hopping requires `cap_add: [NET_ADMIN]` on the verges container (the official image includes iptables/nftables). The hopping range is controlled by `VERGES_HOP_RANGE` in `config.env` and must match the client config.
+- Port hopping requires `network_mode: host` + `cap_add: [NET_ADMIN]` on the verges container (the official image includes iptables/nftables). This lets hysteria bind the range directly on the host and install DNAT rules, avoiding docker-proxy. The hopping range is controlled by `VERGES_HOP_RANGE` in `config.env` and must match the client config.
+- The verges container uses host networking, so its masquerade backend points to `https://127.0.0.1` (caddy on the same host), not `https://caddy`.

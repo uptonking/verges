@@ -16,6 +16,7 @@ Reproducible Docker stack for a single VPS: [Caddy](https://caddyserver.com/) (a
   | TLS entry |    | hysteria2   |           |
   | h1/h2 only|    | QUIC proxy  |           |
   +-----+-----+    +------+------+           |
+                        (host network)
         |                 |  masquerade      |
         |  +--------------+  (in-network)    |
         +->| shared_network (bridge) |<------+
