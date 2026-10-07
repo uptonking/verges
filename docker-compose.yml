@@ -1,25 +1,69 @@
-name: llm-hub-lite
+name: verges
+
 services:
   caddy:
     container_name: caddy
     hostname: caddy
-    image: caddy:latest
-    # build: .
-    networks:
-      - shared_network
+    image: ${CADDY_IMAGE:-caddy:2.10.2}
     restart: always
     ports:
-      - '80:80'
-      - '443:443'
-      - '443:443/udp'
+      - "80:80" # ACME HTTP-01 challenge + HTTP->HTTPS redirect
+      - "443:443/tcp" # HTTPS (h1/h2 only; UDP 443 belongs to verges)
     environment:
-      DOMAIN_NAME: ${DOMAIN_NAME}
-      SSL_EMAIL: ${SSL_EMAIL}
+      DOMAIN_NAME: ${DOMAIN_NAME:?set in config.env}
+      SSL_EMAIL: ${SSL_EMAIL:?set in .env}
     volumes:
-      - ./data:/data
-      - ./config:/etc/caddy
+      - ./data/caddy:/data
+      - ./caddy:/etc/caddy:ro
+    networks:
+      - shared_network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  verges:
+    container_name: verges
+    hostname: verges
+    image: ${VERGES_IMAGE:-tobyxdd/hysteria:v2.13.0}
+    profiles:
+      - verges
+    restart: always
+    ports:
+      - "${VERGES_PORT:-443}:443/udp"
+    volumes:
+      - ./data/caddy:/caddy-data:ro # Caddy cert storage, read-only
+      - ./services/verges:/etc/hysteria:ro
+    # Wait for Caddy to obtain the certificate before starting hysteria.
+    # The image's ENTRYPOINT is "hysteria", so override it with a shell.
+    # ${DOMAIN_NAME} is interpolated by compose at deploy time.
+    # $$ escapes are literal $ for the container shell.
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        n=0
+        until ls /caddy-data/certificates/*/verges.${DOMAIN_NAME}/verges.${DOMAIN_NAME}.crt /caddy-data/certificates/*/verges.${DOMAIN_NAME}/verges.${DOMAIN_NAME}.key >/dev/null 2>&1; do
+          n=$$((n+1))
+          if [ "$$n" -ge 300 ]; then
+            echo "ERROR: caddy certificate not found after 600s; check DNS for verges.${DOMAIN_NAME} and caddy logs"
+            exit 1
+          fi
+          echo "waiting for caddy certificate (attempt $$n)..."
+          sleep 2
+        done
+        exec hysteria server -c /etc/hysteria/config.yaml
+    networks:
+      - shared_network
+    healthcheck:
+      test: ["CMD", "pgrep", "-x", "hysteria"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+
 networks:
   shared_network:
     name: shared_network
     driver: bridge
-    external: true

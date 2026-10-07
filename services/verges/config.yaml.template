@@ -1,0 +1,28 @@
+# Hysteria2 server config — GENERATED from config.yaml.template by the
+# scripts (envsubst). Do not edit the generated file; edit the template.
+# Hysteria has no env-var support, hence the template.
+
+# QUIC listener inside the container (published as ${VERGES_PORT}/udp).
+listen: :443
+
+auth:
+  type: password
+  password: ${VERGES_PASSWORD}
+
+# Reuse the Let's Encrypt certificate maintained by caddy (read-only mount
+# of caddy's /data). Hysteria hot-reloads the pair when caddy renews
+# (mtime is checked on every handshake). The path is deterministic because
+# the Caddyfile pins the Let's Encrypt ACME issuer.
+tls:
+  cert: /caddy-data/certificates/acme-v02.api.letsencrypt.org-directory/verges.${DOMAIN_NAME}/verges.${DOMAIN_NAME}.crt
+  key: /caddy-data/certificates/acme-v02.api.letsencrypt.org-directory/verges.${DOMAIN_NAME}/verges.${DOMAIN_NAME}.key
+
+# Camouflage: forward non-proxy traffic to caddy in-network, masquerading
+# as an HTTPS site. insecure: true because the "caddy" site uses tls
+# internal (self-signed). rewriteHost makes caddy's host matcher match.
+masquerade:
+  type: proxy
+  proxy:
+    url: https://caddy
+    rewriteHost: true
+    insecure: true

@@ -1,65 +1,119 @@
-# verge docker services
+# verges — single-node VPS docker services stack
 
-This repository provides a `docker-compose` setup to run a self-hosted [Caddy](https://caddyserver.com/) reverse proxy.
+Reproducible Docker stack for a single VPS: [Caddy](https://caddyserver.com/) (automatic TLS, the entrypoint for all HTTP traffic) + [Hysteria 2](https://v2.hysteria.network/) proxy (`verges` service, UDP/QUIC 443) sharing one Let's Encrypt certificate. Config-as-code: desired state lives in git, secrets stay on the VPS.
 
-It is configured to connect to a shared Docker network, allowing easy integration with other services like n8n.
+## Architecture
 
-## Features
+```
+                      Internet
+                          |
+        +-----------------+------------------+
+        |                 |                  |
+   TCP 80/443        UDP 443            (any client)
+        |                 |                  |
+  +-----v-----+    +------v------+           |
+  |   caddy   |    |    verges   |           |
+  | TLS entry |    | hysteria2   |           |
+  | h1/h2 only|    | QUIC proxy  |           |
+  +-----+-----+    +------+------+           |
+        |                 |  masquerade      |
+        |  +--------------+  (in-network)    |
+        +->| shared_network (bridge) |<------+
+           +-------------------------+
 
-- Uses the official Caddy Docker image.
-- Automatic HTTPS via Let's Encrypt.
-- Data is persisted in a local volume.
-- Pre-configured for a shared network.
-- Includes scripts for easy management.
-
-## Getting Started
-
-1. **Clone the repository:**
-
-```bash
-git clone https://github.com/AiratTop/caddy-self-hosted.git
-cd caddy-self-hosted
+  cert flow: caddy obtains/renews LE cert for verges.<domain>
+             -> stored in ./data/caddy
+             -> mounted read-only into verges
+             -> hysteria hot-reloads on renewal (no restart)
 ```
 
-2. **Create the shared network:**
-   If you haven't already, create the shared Docker network:
+- **caddy** always runs: TCP 80 (ACME HTTP-01 + redirects) and TCP 443 (HTTPS, h1/h2 — HTTP/3 is disabled because UDP 443 belongs to verges).
+- **verges** (Hysteria 2): UDP 443, enabled/disabled via compose profiles. Unauthenticated traffic is masqueraded to caddy in-network (`It works!` page), so the endpoint looks like a normal HTTPS site.
+
+## Quickstart (fresh VPS)
+
+Prerequisite: a DNS A record `verges.<your-domain>` → VPS IP (DNS-only, no proxy).
 
 ```bash
-docker network create shared_network
+ssh root@<vps>
+git clone https://github.com/uptonking/verges.git /opt/verges
+cd /opt/verges
+scripts/bootstrap.sh
 ```
 
-3. **Set your domain:**
-   Edit the `.env` file and set `DOMAIN_NAME` to your primary domain (for example, `DOMAIN_NAME=example.com` ) and `SSL_EMAIL` .
+Bootstrap checks prerequisites, generates `.env` (secrets) interactively, verifies DNS, adds ufw rules, starts the stack, waits for the certificate, and prints the Hysteria2 client URI.
+
+## Operations (always use the scripts)
+
+| Command | Purpose |
+|---|---|
+| `scripts/bootstrap.sh` | One-time setup on a fresh VPS |
+| `scripts/deploy.sh` | Apply latest git state (pull + regen configs + recreate). Also the enable/disable path. |
+| `scripts/restart.sh` | Restart all services |
+| `scripts/stop.sh` | Stop all services (containers kept; they return after reboot) |
+| `scripts/status.sh` | Containers, DNS, listeners, certificate, client URI |
+| `scripts/logs.sh [svc]` | Follow logs (e.g. `scripts/logs.sh verges`) |
+| `scripts/update.sh` | Re-pull the pinned images and recreate |
+| `scripts/caddy-reload.sh` | Validate + gracefully reload Caddyfile |
+
+Plain `docker compose` also works for inspection but misses `config.env` (profiles, domain) — the scripts pass `--env-file config.env --env-file .env` on every invocation.
+
+## Configuration model
+
+| File | Committed? | Contents |
+|---|---|---|
+| `config.env` | yes | Desired state: `COMPOSE_PROFILES`, `DOMAIN_NAME`, `VPS_IP`, `VERGES_PORT`, image pins |
+| `.env` | no (generated) | Secrets only: `SSL_EMAIL`, `VERGES_PASSWORD` |
+| `caddy/` | yes | Caddyfile + per-site files (`import sites/*.caddy`) |
+| `services/verges/config.yaml.template` | yes | Hysteria config template (envsubst → generated `config.yaml`, gitignored) |
+| `data/` | no | Runtime data (caddy certificate storage) |
+
+### Daily flow
+
+1. Edit locally (e.g. toggle a service, change ports/domain), commit, push to GitHub.
+2. On the VPS: `cd /opt/verges && scripts/deploy.sh`.
+
+### Enable / disable services
+
+Services run behind compose profiles; caddy has no profile (always on). To disable verges:
 
 ```bash
-cp .env.example .env
+# in config.env:  COMPOSE_PROFILES=
+git commit -am "disable verges" && git push
+# on VPS:
+scripts/deploy.sh   # --remove-orphans removes the disabled container
 ```
 
-4. **Configure Caddyfile:**
-   Open the `config/Caddyfile` file and adjust any reverse-proxy blocks you need.
+Re-enable with `COMPOSE_PROFILES=verges`.
 
-5. **Start the service:**
+### Changing the VPS IP
 
-```bash
-docker compose up -d
+Update `VPS_IP` in `config.env` (used only for DNS sanity checks) and the DNS A record. Data (certificates) can be migrated manually by copying `data/`; otherwise a fresh bootstrap re-issues everything.
+
+## Client setup
+
+`scripts/status.sh` prints the ready-to-use URI:
+
+```
+hysteria2://<password>@verges.<domain>:443?sni=verges.<domain>&insecure=0
 ```
 
-## Usage
-
-- **Start:** `docker compose up -d`
-- **Stop:** `docker compose down`
-- **Restart:** `./restart-docker.sh`
-- **Update:** `./update-docker.sh` (Pulls the latest Docker image and restarts)
-
-## Connecting with other services
-
-This setup is designed to work with other services on the `shared_network` . To add a new service, add a new block to the `Caddyfile` in the `config` directory.
+Works with any Hysteria2 client (official CLI, sing-box, Clash.Meta, Stash, Shadowrocket, ...).
 
 ## Notes
 
-- built on top of or inspired by the following projects:
-  - https://github.com/AiratTop/caddy-self-hosted /MIT
+- **Reboot recovery**: all services use `restart: always` and docker is enabled via systemd — no extra units needed. Services come back with the same data/config automatically.
+- **Certificates**: caddy renews automatically; hysteria checks cert file mtimes on every handshake and hot-reloads — no restarts on renewal (~60-day cycle).
+- **ufw**: docker-published ports bypass ufw (iptables ordering); rules are added anyway for intent/defense-in-depth. Never remove the SSH rule.
+- **Reproducibility**: image versions are pinned in `config.env`. Bump a tag, push, `scripts/deploy.sh` (or `scripts/update.sh` to re-pull only).
+- **Adding services**: add a compose service (with its own profile) on `shared_network`, add a `caddy/sites/<name>.caddy` site file, add a template under `services/<name>/` if config generation is needed, extend `scripts/lib/common.sh::gen_configs`.
+- **Opsec**: this repo is public and reveals the domain/IP running Hysteria2; password auth is the only gate. Make the repo private if that matters to you.
+
+## Credits
+
+- Built on top of / inspired by [AiratTop/caddy-self-hosted](https://github.com/AiratTop/caddy-self-hosted) (MIT).
+- [HyNetworks/hysteria](https://github.com/HyNetworks/hysteria) (official image `tobyxdd/hysteria`).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE.md](LICENSE.md).
