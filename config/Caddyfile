@@ -1,0 +1,36 @@
+# This is a sample Caddyfile. You can edit this file to add your own services.
+
+# Email for SSL Let's Encrypt.
+{
+	email {$SSL_EMAIL}
+	log {
+		level WARN
+		format console
+	}
+}
+
+# Main n8n service. 
+# Get n8n repo here: [n8n-self-hosted](https://github.com/AiratTop/n8n-self-hosted)
+# Make sure to change the subdomain and the service name to match your setup.
+
+# n8n.{$DOMAIN_NAME} {
+# 	# Prevents search engines from indexing this site.
+# 	header X-Robots-Tag "noindex, nofollow"
+
+# 	# Forwards all traffic to the n8n backend service running on port 5678.
+# 	reverse_proxy n8n-master:5678 {
+# 		# Disables response buffering, which is crucial for Server-Sent Events (SSE) used by n8n.
+# 		flush_interval -1
+
+# 		# Use only when QUEUE_HEALTH_CHECK_ACTIVE=true
+# 		# health_uri /healthz
+# 		# health_interval 5s
+# 		# health_timeout  5s
+# 		# max_fails 2
+# 	}
+# }
+
+# Example for another service
+# another-service.{$DOMAIN_NAME}{
+# 	reverse_proxy another-service-container-name:8080
+# }
