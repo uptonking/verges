@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Shared helpers for indigenous-node scripts. Source this file, don't execute it.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$SCRIPT_DIR"
+
+CONFIG_ENV="config.env"
+SECRETS_ENV=".env"
+
+if [ ! -f "$CONFIG_ENV" ]; then
+	echo "ERROR: $CONFIG_ENV not found — run inside the indigenous-node directory." >&2
+	exit 1
+fi
+
+if [ ! -f "$SECRETS_ENV" ]; then
+	echo "ERROR: $SECRETS_ENV not found. Create it:" >&2
+	echo "  cp .env.example .env   # or run ./bootstrap.sh" >&2
+	exit 1
+fi
+
+set -a
+# shellcheck source=/dev/null
+. "$CONFIG_ENV"
+# shellcheck source=/dev/null
+. "$SECRETS_ENV"
+set +a
+
+: "${NODE_NAME:?NODE_NAME must be set in $CONFIG_ENV}"
+: "${NODE_HOST:?NODE_HOST must be set in $CONFIG_ENV}"
+: "${DOMAIN_NAME:?DOMAIN_NAME must be set in $CONFIG_ENV}"
+: "${CLIENT_ENTRY_HOST:?CLIENT_ENTRY_HOST must be set in $CONFIG_ENV}"
+: "${CLIENT_ENTRY_PORT:?CLIENT_ENTRY_PORT must be set in $CONFIG_ENV}"
+: "${XUI_VERSION:?XUI_VERSION must be set in $CONFIG_ENV}"
+: "${VLESS_PORT:?VLESS_PORT must be set in $CONFIG_ENV}"
+: "${VLESS_TAG:?VLESS_TAG must be set in $CONFIG_ENV}"
+: "${VLESS_EMAIL:?VLESS_EMAIL must be set in $CONFIG_ENV}"
+: "${REALITY_DEST:?REALITY_DEST must be set in $CONFIG_ENV}"
+: "${REALITY_SNI:?REALITY_SNI must be set in $CONFIG_ENV}"
+: "${REALITY_FINGERPRINT:?REALITY_FINGERPRINT must be set in $CONFIG_ENV}"
+: "${REALITY_SHORT_IDS:?REALITY_SHORT_IDS must be set in $CONFIG_ENV}"
+: "${XUI_PANEL_PORT:?XUI_PANEL_PORT must be set in $CONFIG_ENV}"
+: "${XUI_WEB_BASE_PATH:?XUI_WEB_BASE_PATH must be set in $CONFIG_ENV}"
+: "${XUI_LISTEN_IP:?XUI_LISTEN_IP must be set in $CONFIG_ENV}"
+: "${SWAP_SIZE_MB:=256}"
+: "${BACKUP_KEEP_DAYS:=7}"
+
+: "${XUI_PANEL_USERNAME:?XUI_PANEL_USERNAME must be set in $SECRETS_ENV}"
+: "${XUI_PANEL_PASSWORD:?XUI_PANEL_PASSWORD must be set in $SECRETS_ENV}"
+
+warn() { echo "WARN: $*" >&2; }
+
+panel_url() {
+	echo "http://${XUI_LISTEN_IP}:${XUI_PANEL_PORT}${XUI_WEB_BASE_PATH}"
+}
+
+xui_cli() {
+	echo "/usr/local/xui/x-ui"
+}
+
+xray_bin() {
+	local bin="/usr/local/xui/bin/xray-linux-amd64"
+	if [ -x "$bin" ]; then
+		echo "$bin"
+		return 0
+	fi
+	# fallback: try to find any xray binary in the bin dir
+	ls /usr/local/xui/bin/xray-linux-* 2>/dev/null | head -n1
+}
+
+short_ids_json() {
+	# REALITY_SHORT_IDS=a3f1,be42 -> ["a3f1","be42"]
+	local ids=""
+	local first=1
+	for id in $(echo "$REALITY_SHORT_IDS" | tr ',' ' '); do
+		id="$(echo "$id" | xargs)"
+		[ -n "$id" ] || continue
+		if [ "$first" -eq 1 ]; then
+			first=0
+		else
+			ids="${ids},"
+		fi
+		ids="${ids}\"${id}\""
+	done
+	echo "[$ids]"
+}
+
+first_short_id() {
+	echo "$REALITY_SHORT_IDS" | cut -d, -f1 | xargs
+}

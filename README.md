@@ -1,6 +1,6 @@
-# verges — single-node VPS docker services stack
+# verges — VPS services stack
 
-Reproducible Docker stack for a single VPS: [Caddy](https://caddyserver.com/) (automatic TLS, the entrypoint for all HTTP traffic) + [Hysteria 2](https://v2.hysteria.network/) proxy (`verges` service, UDP/QUIC 443) sharing one Let's Encrypt certificate. Config-as-code: desired state lives in git, secrets stay on the VPS.
+Reproducible Docker stack for a primary VPS: [Caddy](https://caddyserver.com/) (automatic TLS) + [Hysteria 2](https://v2.hysteria.network/) proxy (`verges`, UDP/QUIC 443) sharing one Let's Encrypt certificate. Optionally includes a [gost](https://gost.run/) TCP forwarder (`forward` profile) that relays a VLESS+Reality entrypoint to a separate, good-IP "indigenous" VPS. Config-as-code: desired state lives in git, secrets stay on the VPS.
 
 ## Architecture
 
@@ -63,8 +63,9 @@ Plain `docker compose` also works for inspection but misses `config.env` (profil
 
 | File | Committed? | Contents |
 |---|---|---|
-| `config.env` | yes | Desired state: `COMPOSE_PROFILES`, `DOMAIN_NAME`, `VERGES_PORT`, `VERGES_HOP_RANGE`, image pins |
+| `config.env` | yes | Desired state: `COMPOSE_PROFILES`, `DOMAIN_NAME`, `VERGES_PORT`, `VERGES_HOP_RANGE`, `FORWARD_*`, image pins |
 | `.env` | no (generated) | Secrets only: `SSL_EMAIL`, `VERGES_PASSWORD` |
+| `indigenous-node/` | yes | Separate self-contained script suite for the VLESS+Reality egress VPS |
 | `caddy/` | yes | Caddyfile + per-site files (`import sites/*.caddy`) |
 | `services/verges/config.yaml.template` | yes | Hysteria config template (envsubst → generated `config.yaml`, gitignored) |
 | `data/` | no | Runtime data (caddy certificate storage) |
@@ -85,7 +86,7 @@ git commit -am "disable verges" && git push
 scripts/deploy.sh   # --remove-orphans removes the disabled container
 ```
 
-Re-enable with `COMPOSE_PROFILES=verges`.
+Re-enable with `COMPOSE_PROFILES=verges`. Add the gost forwarder with `COMPOSE_PROFILES=verges,forward`.
 
 ### Changing the VPS IP
 
@@ -102,6 +103,40 @@ hysteria2://<password>@verges.<domain>:443?sni=verges.<domain>&insecure=0
 For clients that support port hopping (e.g. Clash.Meta), also configure `ports: 20000-30000` and `hop-interval: 30`.
 
 Works with any Hysteria2 client (official CLI, sing-box, Clash.Meta, Stash, Shadowrocket, ...).
+
+## VLESS+Reality relay (indigenous node)
+
+When the primary VPS has poor IP quality for some services, enable the `forward` profile and deploy a separate small VPS with `indigenous-node/`.
+
+```text
+User client
+   │  routing: AI/LLM sites → edge-relay
+   ▼
+edge.<domain>:8443  ──►  primary VPS (gost container)
+   │                       raw TCP forward
+   ▼
+edge-direct.<domain>:443  ──►  indigenous VPS (3x-ui + xray)
+   │                              VLESS+Reality, xtls-rprx-vision
+   ▼
+Internet (egress IP = indigenous)
+```
+
+Prerequisites:
+
+- Two DNS A records (DNS-only / grey cloud):
+  - `edge.<domain>` → primary VPS IP
+  - `edge-direct.<domain>` → indigenous VPS IP
+- Set `COMPOSE_PROFILES=verges,forward` in `config.env`.
+
+On the indigenous VPS:
+
+```bash
+git clone https://github.com/uptonking/verges.git /opt/verges
+cd /opt/verges/indigenous-node
+./bootstrap.sh
+```
+
+See `indigenous-node/README.md` for full details.
 
 ## Notes
 

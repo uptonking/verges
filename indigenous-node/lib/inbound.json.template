@@ -1,0 +1,48 @@
+{
+  "up": 0,
+  "down": 0,
+  "total": 0,
+  "remark": "${NODE_NAME}-vless-reality",
+  "enable": true,
+  "expiryTime": 0,
+  "listen": "",
+  "port": ${VLESS_PORT},
+  "protocol": "vless",
+  "settings": {
+    "clients": [
+      {
+        "id": "${VLESS_UUID}",
+        "flow": "xtls-rprx-vision",
+        "email": "${VLESS_EMAIL}",
+        "limitIp": 0,
+        "totalGB": 0,
+        "expiryTime": 0,
+        "enable": true,
+        "tgId": 0,
+        "subId": "",
+        "reset": 0
+      }
+    ],
+    "decryption": "none"
+  },
+  "streamSettings": {
+    "network": "tcp",
+    "security": "reality",
+    "realitySettings": {
+      "target": "${REALITY_DEST}",
+      "serverNames": ["${REALITY_SNI}"],
+      "privateKey": "${REALITY_PRIVATE_KEY}",
+      "shortIds": ${REALITY_SHORT_IDS_JSON},
+      "settings": {
+        "publicKey": "${REALITY_PUBLIC_KEY}",
+        "fingerprint": "${REALITY_FINGERPRINT}",
+        "spiderX": "/"
+      }
+    }
+  },
+  "sniffing": {
+    "enabled": true,
+    "destOverride": ["http", "tls", "quic", "fakedns"]
+  },
+  "tag": "${VLESS_TAG}"
+}

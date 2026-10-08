@@ -1,0 +1,8 @@
+[Unit]
+Description=3x-ui daily backup
+
+[Service]
+Type=oneshot
+ExecStart=/opt/verges/indigenous-node/backup.sh
+User=root
+Group=root

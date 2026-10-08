@@ -23,6 +23,11 @@ if [ "$VERGES_ENABLED" -eq 0 ]; then
 	compose stop verges >/dev/null 2>&1 || true
 	compose rm -f verges >/dev/null 2>&1 || true
 fi
+if [ "$FORWARD_ENABLED" -eq 0 ]; then
+	echo "forward profile disabled — ensuring container is removed"
+	compose stop gost >/dev/null 2>&1 || true
+	compose rm -f gost >/dev/null 2>&1 || true
+fi
 
 compose ps
 

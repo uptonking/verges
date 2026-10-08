@@ -32,8 +32,17 @@ set +a
 : "${VERGES_HOP_RANGE:=20000-30000}"
 : "${CADDY_IMAGE:=caddy:2.10.2}"
 : "${VERGES_IMAGE:=tobyxdd/hysteria:v2.13.0}"
+: "${FORWARD_HOST:=edge.aichorage.de}"
+: "${FORWARD_PORT:=8443}"
+: "${FORWARD_TARGET:=edge-direct.aichorage.de:443}"
+: "${GOST_IMAGE:=gogost/gost:v3.3.0}"
 
 VERGES_HOST="verges.${DOMAIN_NAME}"
+FORWARD_ENTRY="${FORWARD_HOST}:${FORWARD_PORT}"
+FORWARD_ENABLED=0
+case ",${COMPOSE_PROFILES:-}," in
+*,forward,*) FORWARD_ENABLED=1 ;;
+esac
 VERGES_ENABLED=0
 case ",${COMPOSE_PROFILES:-}," in
 *,verges,*) VERGES_ENABLED=1 ;;
@@ -65,6 +74,14 @@ check_dns() {
 	else
 		echo "DNS OK: $VERGES_HOST -> $resolved"
 	fi
+	if [ "$FORWARD_ENABLED" -eq 1 ]; then
+		resolved="$(getent hosts "$FORWARD_HOST" 2>/dev/null | awk '{print $1}' | head -n1 || true)"
+		if [ -z "$resolved" ]; then
+			warn "$FORWARD_HOST has no DNS A record. gost clients will not be able to connect."
+		else
+			echo "DNS OK: $FORWARD_HOST -> $resolved"
+		fi
+	fi
 }
 
 gen_configs() {
@@ -83,6 +100,10 @@ gen_configs() {
 
 client_uri() {
 	echo "hysteria2://${VERGES_PASSWORD}@${VERGES_HOST}:${VERGES_PORT}?sni=${VERGES_HOST}&insecure=0"
+}
+
+forward_uri() {
+	echo "vless+reality entry: ${FORWARD_ENTRY} -> ${FORWARD_TARGET}"
 }
 
 wait_for_cert() {

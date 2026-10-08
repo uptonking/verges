@@ -64,6 +64,19 @@ services:
       retries: 3
       start_period: 120s
 
+  gost:
+    container_name: gost
+    hostname: gost
+    image: ${GOST_IMAGE:-gogost/gost:v3.3.0}
+    profiles:
+      - forward
+    restart: always
+    # Host networking lets gost bind the forward port directly on the host.
+    network_mode: host
+    command:
+      - "-L"
+      - "tcp://:${FORWARD_PORT}/${FORWARD_TARGET}"
+
 networks:
   shared_network:
     name: shared_network

@@ -18,6 +18,9 @@ ss -ulnp | grep -E ":${VERGES_PORT}\b" || true
 if [ -n "${VERGES_HOP_RANGE:-}" ]; then
 	ss -ulnp | grep -E ":(${VERGES_HOP_RANGE%-*}|${VERGES_HOP_RANGE#*-})\b" || true
 fi
+if [ "$FORWARD_ENABLED" -eq 1 ]; then
+	ss -tlnp | grep -E ":${FORWARD_PORT}\b" || true
+fi
 
 echo
 if [ -n "$(cert_path)" ]; then
@@ -31,4 +34,8 @@ if [ "$VERGES_ENABLED" -eq 1 ]; then
 	echo
 	echo "client URI:"
 	client_uri
+fi
+if [ "$FORWARD_ENABLED" -eq 1 ]; then
+	echo
+	echo "VLESS+Reality relay entry: ${FORWARD_ENTRY} -> ${FORWARD_TARGET}"
 fi

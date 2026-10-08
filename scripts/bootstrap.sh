@@ -98,7 +98,10 @@ if [ -n "${VERGES_HOP_RANGE:-}" ]; then
 	# ufw uses a colon for ranges (e.g. 20000:30000/udp).
 	ufw allow "${VERGES_HOP_RANGE%-*}:${VERGES_HOP_RANGE#*-}/udp" >/dev/null # Hysteria2 port hopping range
 fi
-echo "ufw rules ensured: 80/tcp, 443/tcp, ${VERGES_PORT}/udp${VERGES_HOP_RANGE:+, ${VERGES_HOP_RANGE}/udp}"
+if [ "$FORWARD_ENABLED" -eq 1 ]; then
+	ufw allow "${FORWARD_PORT}/tcp" >/dev/null     # gost forward to indigenous
+fi
+echo "ufw rules ensured: 80/tcp, 443/tcp, ${VERGES_PORT}/udp${VERGES_HOP_RANGE:+, ${VERGES_HOP_RANGE}/udp}${FORWARD_ENABLED:+, ${FORWARD_PORT}/tcp}"
 
 # --- generate + start ---
 gen_configs
@@ -115,6 +118,9 @@ echo "site:       https://${VERGES_HOST}  (expect: 200 OK)"
 if [ "$VERGES_ENABLED" -eq 1 ]; then
 	echo "client URI:"
 	client_uri
+fi
+if [ "$FORWARD_ENABLED" -eq 1 ]; then
+	echo "VLESS+Reality relay entry: ${FORWARD_ENTRY} -> ${FORWARD_TARGET}"
 fi
 echo "logs:       scripts/logs.sh"
 echo "status:     scripts/status.sh"
