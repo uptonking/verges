@@ -67,7 +67,7 @@ services:
   gost:
     container_name: gost
     hostname: gost
-    image: ${GOST_IMAGE:-gogost/gost:v3.3.0}
+    image: ${GOST_IMAGE:-gogost/gost:3.3.0}
     profiles:
       - forward
     restart: always

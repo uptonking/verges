@@ -35,7 +35,7 @@ set +a
 : "${FORWARD_HOST:=edge.aichorage.de}"
 : "${FORWARD_PORT:=8443}"
 : "${FORWARD_TARGET:=edge-direct.aichorage.de:443}"
-: "${GOST_IMAGE:=gogost/gost:v3.3.0}"
+: "${GOST_IMAGE:=gogost/gost:3.3.0}"
 
 VERGES_HOST="verges.${DOMAIN_NAME}"
 FORWARD_ENTRY="${FORWARD_HOST}:${FORWARD_PORT}"
