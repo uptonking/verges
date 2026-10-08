@@ -70,7 +70,12 @@ export REALITY_SHORT_IDS_JSON="$(short_ids_json)"
 upsert_inbound() {
 	local port="$1" tag="$2" remark="$3" enable="$4"
 
-	export INBOUND_PORT="$port" INBOUND_TAG="$tag" INBOUND_REMARK="$remark" INBOUND_ENABLE="$enable"
+	local enable_bool="false"
+	if [ "$enable" = "1" ]; then
+		enable_bool="true"
+	fi
+
+	export INBOUND_PORT="$port" INBOUND_TAG="$tag" INBOUND_REMARK="$remark" INBOUND_ENABLE="$enable_bool"
 
 	local payload
 	payload="$(mktemp)"
