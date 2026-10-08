@@ -129,7 +129,7 @@ api_call POST /panel/api/setting/updateXrayTemplate \
 	-d '{"log":{"access":"none","loglevel":"warning","dnsLog":false}}' >/dev/null 2>&1 || true
 
 # --- enforce pinned xray-core version (panel updates reset it to the bundled one) ---
-CURRENT_XRAY="$("$(xray_bin)" -version 2>/dev/null | awk '{print $2}')"
+CURRENT_XRAY="$("$(xray_bin)" -version 2>/dev/null | head -n1 | awk '{print $2}')"
 if [ "${CURRENT_XRAY#v}" != "${XRAY_VERSION#v}" ]; then
 	echo "xray version ${CURRENT_XRAY:-unknown} != pin ${XRAY_VERSION} — installing pinned core ..."
 	api_call POST "/panel/api/server/installXray/${XRAY_VERSION}" | jq -r '.msg' || true
