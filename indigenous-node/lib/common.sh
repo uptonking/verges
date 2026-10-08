@@ -33,6 +33,7 @@ set +a
 : "${CLIENT_ENTRY_HOST:?CLIENT_ENTRY_HOST must be set in $CONFIG_ENV}"
 : "${CLIENT_ENTRY_PORT:?CLIENT_ENTRY_PORT must be set in $CONFIG_ENV}"
 : "${XUI_VERSION:?XUI_VERSION must be set in $CONFIG_ENV}"
+: "${XRAY_VERSION:=v26.6.27}"
 : "${DIRECT_VLESS_PORT:=443}"
 : "${DIRECT_VLESS_TAG:=in-443-vless-reality}"
 : "${DIRECT_INBOUND_ENABLE:=1}"
