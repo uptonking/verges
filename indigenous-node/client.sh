@@ -18,6 +18,9 @@ SID="$(first_short_id)"
 vless_link_relay="vless://${VLESS_UUID}@${CLIENT_ENTRY_HOST}:${CLIENT_ENTRY_PORT}?security=reality&sni=${REALITY_SNI}&fp=${REALITY_FINGERPRINT}&pbk=${REALITY_PUBLIC_KEY}&sid=${SID}&type=tcp&flow=xtls-rprx-vision#edge-relay"
 vless_link_direct="vless://${VLESS_UUID}@${NODE_HOST}:${DIRECT_VLESS_PORT}?security=reality&sni=${REALITY_SNI}&fp=${REALITY_FINGERPRINT}&pbk=${REALITY_PUBLIC_KEY}&sid=${SID}&type=tcp&flow=xtls-rprx-vision#edge-direct"
 
+hy2_link_relay="hysteria2://${HY2_PASSWORD}@${CLIENT_ENTRY_HOST}:${CLIENT_ENTRY_PORT}?sni=${NODE_HOST}&insecure=1#edge-relay-hy2"
+hy2_link_direct="hysteria2://${HY2_PASSWORD}@${NODE_HOST}:${HY2_PORT}?sni=${NODE_HOST}&insecure=1#edge-direct-hy2"
+
 vless_proxy_yaml() {
 	local name="$1" server="$2" port="$3"
 	cat <<EOF
@@ -40,9 +43,13 @@ EOF
 
 echo "=== VLESS+Reality client configs (two modes, same credentials) ==="
 echo
-echo "--- vless:// links ---"
+echo "--- vless:// links (VLESS+Reality, TCP — works everywhere, ~3 RTT handshake) ---"
 echo "relay  (via primary): ${vless_link_relay}"
 echo "direct (standalone) : ${vless_link_direct}"
+echo
+echo "--- hysteria2:// links (QUIC — low latency, needs UDP) ---"
+echo "relay  (via primary): ${hy2_link_relay}"
+echo "direct (standalone) : ${hy2_link_direct}"
 echo
 echo "--- Clash Meta snippet ---"
 {
@@ -50,11 +57,29 @@ echo "--- Clash Meta snippet ---"
 	vless_proxy_yaml edge-relay "${CLIENT_ENTRY_HOST}" "${CLIENT_ENTRY_PORT}"
 	vless_proxy_yaml edge-direct "${NODE_HOST}" "${DIRECT_VLESS_PORT}"
 	cat <<EOF
+  - name: edge-relay-hy2
+    type: hysteria2
+    server: ${CLIENT_ENTRY_HOST}
+    port: ${CLIENT_ENTRY_PORT}
+    password: ${HY2_PASSWORD}
+    sni: ${NODE_HOST}
+    skip-cert-verify: true
+    udp: true
+  - name: edge-direct-hy2
+    type: hysteria2
+    server: ${NODE_HOST}
+    port: ${HY2_PORT}
+    password: ${HY2_PASSWORD}
+    sni: ${NODE_HOST}
+    skip-cert-verify: true
+    udp: true
 
 proxy-groups:
   - name: AI-sites
     type: select
     proxies:
+      - edge-relay-hy2
+      - edge-direct-hy2
       - edge-relay
       - edge-direct
       - DIRECT
@@ -108,6 +133,23 @@ cat <<EOF
       }
     }
   ],
+    {
+      "type": "hysteria2",
+      "tag": "edge-relay-hy2",
+      "server": "${CLIENT_ENTRY_HOST}",
+      "server_port": ${CLIENT_ENTRY_PORT},
+      "password": "${HY2_PASSWORD}",
+      "tls": { "enabled": true, "server_name": "${NODE_HOST}", "insecure": true }
+    },
+    {
+      "type": "hysteria2",
+      "tag": "edge-direct-hy2",
+      "server": "${NODE_HOST}",
+      "server_port": ${HY2_PORT},
+      "password": "${HY2_PASSWORD}",
+      "tls": { "enabled": true, "server_name": "${NODE_HOST}", "insecure": true }
+    }
+  ],
   "route": {
     "rules": [
       {
@@ -123,7 +165,7 @@ cat <<EOF
           "copilot.microsoft.com",
           "perplexity.ai"
         ],
-        "outbound": "edge-relay"
+        "outbound": "edge-relay-hy2"
       }
     ]
   }

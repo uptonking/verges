@@ -76,6 +76,8 @@ services:
     command:
       - "-L"
       - "tcp://:${FORWARD_PORT}/${FORWARD_TARGET}"
+      - "-L"
+      - "udp://:${FORWARD_PORT}/${FORWARD_TARGET_UDP}"
 
 networks:
   shared_network:

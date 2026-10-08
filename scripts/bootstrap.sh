@@ -99,7 +99,8 @@ if [ -n "${VERGES_HOP_RANGE:-}" ]; then
 	ufw allow "${VERGES_HOP_RANGE%-*}:${VERGES_HOP_RANGE#*-}/udp" >/dev/null # Hysteria2 port hopping range
 fi
 if [ "$FORWARD_ENABLED" -eq 1 ]; then
-	ufw allow "${FORWARD_PORT}/tcp" >/dev/null     # gost forward to indigenous
+	ufw allow "${FORWARD_PORT}/tcp" >/dev/null     # gost TCP forward to indigenous (VLESS relay)
+	ufw allow "${FORWARD_PORT}/udp" >/dev/null     # gost UDP forward to indigenous (hysteria2 relay)
 fi
 echo "ufw rules ensured: 80/tcp, 443/tcp, ${VERGES_PORT}/udp${VERGES_HOP_RANGE:+, ${VERGES_HOP_RANGE}/udp}${FORWARD_ENABLED:+, ${FORWARD_PORT}/tcp}"
 

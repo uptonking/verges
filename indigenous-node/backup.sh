@@ -17,6 +17,7 @@ tar czf "$OUT" \
 	/etc/default/x-ui \
 	"$SCRIPT_DIR/.env" \
 	"$SCRIPT_DIR/config.env" \
+	"$SCRIPT_DIR/certs" \
 	2>/dev/null
 
 chmod 600 "$OUT"

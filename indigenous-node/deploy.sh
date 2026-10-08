@@ -135,6 +135,23 @@ if [ "${CURRENT_XRAY#v}" != "${XRAY_VERSION#v}" ]; then
 	api_call POST "/panel/api/server/installXray/${XRAY_VERSION}" | jq -r '.msg' || true
 fi
 
+# --- hysteria2 (QUIC) standalone server ---
+if [ -x /usr/local/bin/hysteria ]; then
+	mkdir -p "${GENERATED_DIR}"
+	export HY2_CERT HY2_KEY HY2_PORT HY2_PASSWORD
+	envsubst '${HY2_CERT} ${HY2_KEY} ${HY2_PORT} ${HY2_PASSWORD}' \
+		< lib/hysteria2.yaml.template \
+		> "${GENERATED_DIR}/hysteria2.yaml"
+	chmod 600 "${GENERATED_DIR}/hysteria2.yaml"
+	cp "$SCRIPT_DIR/systemd/hysteria2.service" /etc/systemd/system/
+	systemctl daemon-reload
+	systemctl enable hysteria2 >/dev/null 2>&1
+	systemctl restart hysteria2
+	echo "hysteria2 restarted (udp/${HY2_PORT})"
+else
+	echo "WARN: /usr/local/bin/hysteria missing — run ./bootstrap.sh to install it" >&2
+fi
+
 # Ensure xray picks up changes.
 systemctl reload x-ui || systemctl restart x-ui
 

@@ -12,8 +12,14 @@ systemctl is-active x-ui || true
 systemctl is-enabled x-ui || true
 
 echo
+echo "=== hysteria2 service ==="
+systemctl is-active hysteria2 || true
+systemctl is-enabled hysteria2 || true
+
+echo
 echo "=== listeners ==="
 ss -tlnp | grep -E ":(${DIRECT_VLESS_PORT}|${RELAY_VLESS_PORT}|${XUI_PANEL_PORT})\b" || true
+ss -ulnp | grep -E ":${HY2_PORT}\b" || true
 
 echo
 echo "=== xray version ==="

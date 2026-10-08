@@ -51,9 +51,15 @@ set +a
 : "${XUI_LISTEN_IP:?XUI_LISTEN_IP must be set in $CONFIG_ENV}"
 : "${SWAP_SIZE_MB:=256}"
 : "${BACKUP_KEEP_DAYS:=7}"
+: "${HY2_PORT:=443}"
+: "${HY2_VERSION:=app/v2.13.0}"
+: "${HY2_CERT:=$SCRIPT_DIR/certs/hy2.crt}"
+: "${HY2_KEY:=$SCRIPT_DIR/certs/hy2.key}"
+: "${GENERATED_DIR:=$SCRIPT_DIR/generated}"
 
 : "${XUI_PANEL_USERNAME:?XUI_PANEL_USERNAME must be set in $SECRETS_ENV}"
 : "${XUI_PANEL_PASSWORD:?XUI_PANEL_PASSWORD must be set in $SECRETS_ENV}"
+: "${HY2_PASSWORD:?HY2_PASSWORD must be set in $SECRETS_ENV}"
 
 warn() { echo "WARN: $*" >&2; }
 
