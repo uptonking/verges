@@ -34,7 +34,7 @@ set +a
 : "${VERGES_IMAGE:=tobyxdd/hysteria:v2.13.0}"
 : "${FORWARD_HOST:=edge.aichorage.de}"
 : "${FORWARD_PORT:=8443}"
-: "${FORWARD_TARGET:=edge-direct.aichorage.de:443}"
+: "${FORWARD_TARGET:=edge-direct.aichorage.de:8443}"
 : "${GOST_IMAGE:=gogost/gost:3.3.0}"
 
 VERGES_HOST="verges.${DOMAIN_NAME}"

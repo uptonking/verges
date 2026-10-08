@@ -109,17 +109,22 @@ Works with any Hysteria2 client (official CLI, sing-box, Clash.Meta, Stash, Shad
 When the primary VPS has poor IP quality for some services, enable the `forward` profile and deploy a separate small VPS with `indigenous-node/`.
 
 ```text
-User client
-   │  routing: AI/LLM sites → edge-relay
-   ▼
-edge.<domain>:8443  ──►  primary VPS (gost container)
-   │                       raw TCP forward
-   ▼
-edge-direct.<domain>:443  ──►  indigenous VPS (3x-ui + xray)
-   │                              VLESS+Reality, xtls-rprx-vision
-   ▼
-Internet (egress IP = indigenous)
+Two client modes, same credentials (UUID / public key / short id):
+
+relay  : client ──► edge.<domain>:8443 ──► primary gost ──► indigenous:8443 (relay inbound)
+direct : client ─────────────────────────► edge-direct.<domain>:443 (direct inbound)
+                                                              │
+                                    indigenous 3x-ui + xray (VLESS+Reality, xtls-rprx-vision)
+                                                              ▼
+                                    Internet (egress IP = indigenous)
 ```
+
+**Switching modes** (see `indigenous-node/README.md`):
+
+1. In the client: pick `edge-relay` or `edge-direct` (both are emitted by `client.sh`).
+2. In the 3x-ui webapp: toggle each inbound's enable switch (takes effect immediately).
+3. Via config: set `DIRECT_INBOUND_ENABLE` / `RELAY_INBOUND_ENABLE` in `indigenous-node/config.env`, run `./deploy.sh` (flags are the source of truth).
+4. To disable the whole relay path, remove `forward` from `COMPOSE_PROFILES` on the primary.
 
 Prerequisites:
 

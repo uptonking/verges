@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Generate client configs for the VLESS+Reality relay.
+# Generate client configs for both VLESS+Reality modes (direct + relay).
+# Both modes share the same UUID / public key / short id — only server:port differs.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -14,20 +15,16 @@ fi
 
 SID="$(first_short_id)"
 
-vless_link="vless://${VLESS_UUID}@${CLIENT_ENTRY_HOST}:${CLIENT_ENTRY_PORT}?security=reality&sni=${REALITY_SNI}&fp=${REALITY_FINGERPRINT}&pbk=${REALITY_PUBLIC_KEY}&sid=${SID}&type=tcp&flow=xtls-rprx-vision#edge-relay"
+vless_link_relay="vless://${VLESS_UUID}@${CLIENT_ENTRY_HOST}:${CLIENT_ENTRY_PORT}?security=reality&sni=${REALITY_SNI}&fp=${REALITY_FINGERPRINT}&pbk=${REALITY_PUBLIC_KEY}&sid=${SID}&type=tcp&flow=xtls-rprx-vision#edge-relay"
+vless_link_direct="vless://${VLESS_UUID}@${NODE_HOST}:${DIRECT_VLESS_PORT}?security=reality&sni=${REALITY_SNI}&fp=${REALITY_FINGERPRINT}&pbk=${REALITY_PUBLIC_KEY}&sid=${SID}&type=tcp&flow=xtls-rprx-vision#edge-direct"
 
-echo "=== VLESS+Reality client configs ==="
-echo
-echo "--- vless:// link ---"
-echo "$vless_link"
-echo
-echo "--- Clash Meta snippet ---"
-cat <<EOF
-proxies:
-  - name: edge-relay
+vless_proxy_yaml() {
+	local name="$1" server="$2" port="$3"
+	cat <<EOF
+  - name: ${name}
     type: vless
-    server: ${CLIENT_ENTRY_HOST}
-    port: ${CLIENT_ENTRY_PORT}
+    server: ${server}
+    port: ${port}
     uuid: ${VLESS_UUID}
     flow: xtls-rprx-vision
     network: tcp
@@ -38,12 +35,28 @@ proxies:
       public-key: ${REALITY_PUBLIC_KEY}
       short-id: ${SID}
     client-fingerprint: ${REALITY_FINGERPRINT}
+EOF
+}
+
+echo "=== VLESS+Reality client configs (two modes, same credentials) ==="
+echo
+echo "--- vless:// links ---"
+echo "relay  (via primary): ${vless_link_relay}"
+echo "direct (standalone) : ${vless_link_direct}"
+echo
+echo "--- Clash Meta snippet ---"
+{
+	echo "proxies:"
+	vless_proxy_yaml edge-relay "${CLIENT_ENTRY_HOST}" "${CLIENT_ENTRY_PORT}"
+	vless_proxy_yaml edge-direct "${NODE_HOST}" "${DIRECT_VLESS_PORT}"
+	cat <<EOF
 
 proxy-groups:
   - name: AI-sites
     type: select
     proxies:
       - edge-relay
+      - edge-direct
       - DIRECT
 
 rules:
@@ -58,6 +71,7 @@ rules:
   - DOMAIN-SUFFIX,copilot.microsoft.com,AI-sites
   - DOMAIN-SUFFIX,perplexity.ai,AI-sites
 EOF
+}
 echo
 echo "--- sing-box outbound snippet ---"
 cat <<EOF
@@ -74,15 +88,23 @@ cat <<EOF
       "tls": {
         "enabled": true,
         "server_name": "${REALITY_SNI}",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "${REALITY_FINGERPRINT}"
-        },
-        "reality": {
-          "enabled": true,
-          "public_key": "${REALITY_PUBLIC_KEY}",
-          "short_id": "${SID}"
-        }
+        "utls": { "enabled": true, "fingerprint": "${REALITY_FINGERPRINT}" },
+        "reality": { "enabled": true, "public_key": "${REALITY_PUBLIC_KEY}", "short_id": "${SID}" }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "edge-direct",
+      "server": "${NODE_HOST}",
+      "server_port": ${DIRECT_VLESS_PORT},
+      "uuid": "${VLESS_UUID}",
+      "flow": "xtls-rprx-vision",
+      "network": "tcp",
+      "tls": {
+        "enabled": true,
+        "server_name": "${REALITY_SNI}",
+        "utls": { "enabled": true, "fingerprint": "${REALITY_FINGERPRINT}" },
+        "reality": { "enabled": true, "public_key": "${REALITY_PUBLIC_KEY}", "short_id": "${SID}" }
       }
     }
   ],
@@ -107,3 +129,6 @@ cat <<EOF
   }
 }
 EOF
+echo
+echo "# Tip: switch mode by changing the route rule outbound to \"edge-direct\","
+echo "#      or pick the other proxy in the Clash AI-sites group."

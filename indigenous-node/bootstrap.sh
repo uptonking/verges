@@ -191,7 +191,12 @@ fi
 # --- firewall ---
 ufw default deny incoming >/dev/null 2>&1 || true
 ufw allow 22/tcp comment 'SSH' >/dev/null
-ufw allow "${VLESS_PORT}/tcp" comment 'VLESS+Reality' >/dev/null
+if [ "${DIRECT_INBOUND_ENABLE}" = "1" ]; then
+	ufw allow "${DIRECT_VLESS_PORT}/tcp" comment 'VLESS+Reality direct' >/dev/null
+fi
+if [ "${RELAY_INBOUND_ENABLE}" = "1" ]; then
+	ufw allow "${RELAY_VLESS_PORT}/tcp" comment 'VLESS+Reality relay (gost target)' >/dev/null
+fi
 # 3x-ui subscription server defaults to loopback; block it explicitly inbound just in case.
 # ufw allow "${XUI_PANEL_PORT}/tcp" comment '3x-ui panel (loopback-only anyway)' >/dev/null
 ufw --force enable

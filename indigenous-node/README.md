@@ -1,8 +1,19 @@
 # indigenous-node
 
-Self-contained automation for a small Debian/Ubuntu VPS running **3x-ui + xray-core** with a **VLESS + REALITY** inbound.
+Self-contained automation for a small Debian/Ubuntu VPS running **3x-ui + xray-core** with **VLESS + REALITY** inbounds.
 
-This node is designed to be the "good IP" egress point: a primary VPS forwards raw TCP to it, and client traffic exits with the indigenous IP.
+This node is the "good IP" egress point. It serves **two modes** sharing the same UUID / Reality keypair / short ids:
+
+| Mode | Client entry | Inbound | Use when |
+|------|--------------|---------|----------|
+| `edge-relay` | `edge.<domain>:8443` (via primary gost) | relay, port `RELAY_VLESS_PORT` (8443) | direct path to this VPS is slow/blocked |
+| `edge-direct` | `edge-direct.<domain>:443` | direct, port `DIRECT_VLESS_PORT` (443) | primary node is down or adds latency |
+
+**Switching modes:**
+
+1. **Client-side** (no server change): pick the other proxy — both are printed by `./client.sh`.
+2. **3x-ui webapp**: toggle the inbound's enable switch (immediate effect). Note: the next `./deploy.sh` re-applies the `*_INBOUND_ENABLE` flags from `config.env`.
+3. **Config flags**: edit `DIRECT_INBOUND_ENABLE` / `RELAY_INBOUND_ENABLE` in `config.env`, then `./deploy.sh`.
 
 ## Quick start
 
@@ -58,4 +69,4 @@ ssh -L 2053:127.0.0.1:2053 root@76.9.111.231
 
 ## Client routing
 
-Use the output of `./client.sh`. Only route the traffic that needs the good IP through `edge-relay`; keep other traffic on `verges` (Hysteria2) or direct.
+Use the output of `./client.sh` (both `edge-relay` and `edge-direct` are emitted). Only route traffic that needs the good IP through this node; keep other traffic on `verges` (Hysteria2) or direct.

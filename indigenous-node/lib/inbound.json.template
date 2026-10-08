@@ -2,11 +2,11 @@
   "up": 0,
   "down": 0,
   "total": 0,
-  "remark": "${NODE_NAME}-vless-reality",
-  "enable": true,
+  "remark": "${INBOUND_REMARK}",
+  "enable": ${INBOUND_ENABLE},
   "expiryTime": 0,
   "listen": "",
-  "port": ${VLESS_PORT},
+  "port": ${INBOUND_PORT},
   "protocol": "vless",
   "settings": {
     "clients": [
@@ -44,5 +44,5 @@
     "enabled": true,
     "destOverride": ["http", "tls", "quic", "fakedns"]
   },
-  "tag": "${VLESS_TAG}"
+  "tag": "${INBOUND_TAG}"
 }

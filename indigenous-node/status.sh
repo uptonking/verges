@@ -13,7 +13,7 @@ systemctl is-enabled x-ui || true
 
 echo
 echo "=== listeners ==="
-ss -tlnp | grep -E ":${VLESS_PORT}\b|:${XUI_PANEL_PORT}\b" || true
+ss -tlnp | grep -E ":(${DIRECT_VLESS_PORT}|${RELAY_VLESS_PORT}|${XUI_PANEL_PORT})\b" || true
 
 echo
 echo "=== xray version ==="
@@ -42,5 +42,6 @@ free -m | head -2
 df -h /
 
 echo
-echo "=== client entry ==="
-echo "${CLIENT_ENTRY_HOST}:${CLIENT_ENTRY_PORT} -> ${NODE_HOST}:${VLESS_PORT}"
+echo "=== modes ==="
+echo "direct (standalone): ${NODE_HOST}:${DIRECT_VLESS_PORT} enable=${DIRECT_INBOUND_ENABLE}"
+echo "relay  (via primary): ${CLIENT_ENTRY_HOST}:${CLIENT_ENTRY_PORT} -> ${NODE_HOST}:${RELAY_VLESS_PORT} enable=${RELAY_INBOUND_ENABLE}"

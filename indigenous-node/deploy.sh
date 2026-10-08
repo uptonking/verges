@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Apply desired state to 3x-ui: upsert the VLESS+Reality inbound.
+# Apply desired state to 3x-ui: upsert the direct + relay VLESS+Reality inbounds.
+#
+# The *_INBOUND_ENABLE flags in config.env are the source of truth: a manual
+# toggle in the 3x-ui webapp persists until the next ./deploy.sh run.
 
 set -euo pipefail
 
@@ -55,38 +58,48 @@ if [ -z "$API_TOKEN" ] || ! test_token; then
 	. "$SCRIPT_DIR/lib/common.sh"
 fi
 
-# --- build inbound payload ---
+# --- shared substitution context ---
 export NODE_NAME NODE_HOST DOMAIN_NAME CLIENT_ENTRY_HOST CLIENT_ENTRY_PORT \
-	XUI_VERSION VLESS_PORT VLESS_TAG VLESS_EMAIL REALITY_DEST REALITY_SNI \
+	XUI_VERSION VLESS_EMAIL REALITY_DEST REALITY_SNI \
 	REALITY_FINGERPRINT REALITY_SHORT_IDS XUI_PANEL_PORT XUI_WEB_BASE_PATH \
 	XUI_LISTEN_IP SWAP_SIZE_MB BACKUP_KEEP_DAYS \
 	VLESS_UUID REALITY_PRIVATE_KEY REALITY_PUBLIC_KEY
 export REALITY_SHORT_IDS_JSON="$(short_ids_json)"
 
-TMP_PAYLOAD="$(mktemp)"
-trap 'rm -f "$TMP_PAYLOAD"' EXIT
+# --- upsert one inbound ---
+upsert_inbound() {
+	local port="$1" tag="$2" remark="$3" enable="$4"
 
-envsubst '${NODE_NAME} ${VLESS_PORT} ${VLESS_TAG} ${VLESS_EMAIL} ${REALITY_DEST} ${REALITY_SNI} ${REALITY_FINGERPRINT} ${REALITY_SHORT_IDS_JSON} ${REALITY_PRIVATE_KEY} ${REALITY_PUBLIC_KEY} ${VLESS_UUID}' \
-	< lib/inbound.json.template \
-	> "$TMP_PAYLOAD"
+	export INBOUND_PORT="$port" INBOUND_TAG="$tag" INBOUND_REMARK="$remark" INBOUND_ENABLE="$enable"
 
-# Validate JSON.
-if ! jq empty "$TMP_PAYLOAD" 2>/dev/null; then
-	echo "ERROR: generated inbound payload is not valid JSON" >&2
-	exit 1
-fi
+	local payload
+	payload="$(mktemp)"
+	envsubst '${INBOUND_PORT} ${INBOUND_TAG} ${INBOUND_REMARK} ${INBOUND_ENABLE} ${VLESS_UUID} ${VLESS_EMAIL} ${REALITY_DEST} ${REALITY_SNI} ${REALITY_FINGERPRINT} ${REALITY_SHORT_IDS_JSON} ${REALITY_PRIVATE_KEY} ${REALITY_PUBLIC_KEY}' \
+		< lib/inbound.json.template \
+		> "$payload"
 
-# --- upsert inbound by tag ---
-echo "checking existing inbounds for tag ${VLESS_TAG} ..."
-EXISTING_ID="$(api_call GET /panel/api/inbounds/list | jq -r ".obj[] | select(.tag==\"${VLESS_TAG}\") | .id" | head -n1 || true)"
+	if ! jq empty "$payload" 2>/dev/null; then
+		echo "ERROR: generated payload for ${tag} is not valid JSON" >&2
+		rm -f "$payload"
+		exit 1
+	fi
 
-if [ -n "$EXISTING_ID" ]; then
-	echo "updating inbound id=${EXISTING_ID}"
-	api_call POST "/panel/api/inbounds/update/${EXISTING_ID}" -d "@$TMP_PAYLOAD" | jq .
-else
-	echo "creating inbound"
-	api_call POST /panel/api/inbounds/add -d "@$TMP_PAYLOAD" | jq .
-fi
+	echo "checking existing inbounds for tag ${tag} ..."
+	local existing_id
+	existing_id="$(api_call GET /panel/api/inbounds/list | jq -r ".obj[] | select(.tag==\"${tag}\") | .id" | head -n1 || true)"
+
+	if [ -n "$existing_id" ]; then
+		echo "updating inbound id=${existing_id} (port=${port}, enable=${enable})"
+		api_call POST "/panel/api/inbounds/update/${existing_id}" -d "@$payload" | jq -r '.msg'
+	else
+		echo "creating inbound (port=${port}, enable=${enable})"
+		api_call POST /panel/api/inbounds/add -d "@$payload" | jq -r '.msg'
+	fi
+	rm -f "$payload"
+}
+
+upsert_inbound "${DIRECT_VLESS_PORT}" "${DIRECT_VLESS_TAG}" "${NODE_NAME}-direct" "${DIRECT_INBOUND_ENABLE}"
+upsert_inbound "${RELAY_VLESS_PORT}" "${RELAY_VLESS_TAG}" "${NODE_NAME}-relay" "${RELAY_INBOUND_ENABLE}"
 
 # Try to set lean xray log config via settings API (best-effort).
 api_call POST /panel/api/setting/updateXrayTemplate \
