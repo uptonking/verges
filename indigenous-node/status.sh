@@ -49,5 +49,9 @@ df -h /
 
 echo
 echo "=== modes ==="
-echo "direct (standalone): ${NODE_HOST}:${DIRECT_VLESS_PORT} enable=${DIRECT_INBOUND_ENABLE}"
-echo "relay  (via primary): ${CLIENT_ENTRY_HOST}:${CLIENT_ENTRY_PORT} -> ${NODE_HOST}:${RELAY_VLESS_PORT} enable=${RELAY_INBOUND_ENABLE}"
+echo "direct (standalone):"
+echo "  vless (tcp): ${NODE_HOST}:${DIRECT_VLESS_PORT} (enable=${DIRECT_INBOUND_ENABLE})"
+echo "  hy2   (udp): ${NODE_HOST}:${HY2_PORT}"
+echo "relay  (via primary):"
+echo "  vless (tcp): ${CLIENT_ENTRY_HOST}:${CLIENT_ENTRY_PORT} -> ${NODE_HOST}:${RELAY_VLESS_PORT} (enable=${RELAY_INBOUND_ENABLE})"
+echo "  hy2   (udp): ${CLIENT_ENTRY_HOST}:${CLIENT_ENTRY_PORT} -> ${NODE_HOST}:${HY2_PORT}"

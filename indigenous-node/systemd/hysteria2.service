@@ -7,8 +7,8 @@ Type=simple
 Environment=GOGC=50
 Environment=GOMEMLIMIT=96MiB
 ExecStart=/usr/local/bin/hysteria server -c /opt/verges/indigenous-node/generated/hysteria2.yaml
-Restart=on-failure
-RestartSec=5s
+Restart=always
+RestartSec=3s
 LimitNOFILE=1000000
 
 [Install]

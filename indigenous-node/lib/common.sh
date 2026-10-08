@@ -86,6 +86,19 @@ install_hysteria() {
 	rm -rf "${tmp}"
 }
 
+ensure_hy2_certs() {
+	if [ ! -f "${HY2_CERT}" ] || [ ! -f "${HY2_KEY}" ]; then
+		mkdir -p "$(dirname "${HY2_CERT}")"
+		openssl ecparam -genkey -name prime256v1 -out "${HY2_KEY}"
+		openssl req -x509 -new -key "${HY2_KEY}" -sha256 -days 3650 \
+			-subj "/CN=${NODE_HOST}" \
+			-addext "subjectAltName=DNS:${NODE_HOST}" \
+			-out "${HY2_CERT}"
+		chmod 600 "${HY2_KEY}"
+		echo "generated hy2 self-signed cert for ${NODE_HOST}"
+	fi
+}
+
 xray_bin() {
 	local bin="/usr/local/x-ui/bin/xray-linux-amd64"
 	if [ -x "$bin" ]; then

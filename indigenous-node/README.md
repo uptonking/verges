@@ -15,7 +15,7 @@ This node is the "good IP" egress point. Each mode comes in two transports:
 
 **Switching modes:**
 
-1. **Client-side** (no server change): pick the other proxy — both are printed by `./client.sh`.
+1. **Client-side** (no server change): pick the other proxy — all four are printed by `./client.sh`.
 2. **3x-ui webapp**: toggle the inbound's enable switch (immediate effect). Note: the next `./deploy.sh` re-applies the `*_INBOUND_ENABLE` flags from `config.env`.
 3. **Config flags**: edit `DIRECT_INBOUND_ENABLE` / `RELAY_INBOUND_ENABLE` in `config.env`, then `./deploy.sh`.
 

@@ -41,7 +41,7 @@ vless_proxy_yaml() {
 EOF
 }
 
-echo "=== VLESS+Reality client configs (two modes, same credentials) ==="
+echo "=== Edge client configs (4 modes: 2 VLESS+Reality TCP + 2 Hysteria2 QUIC) ==="
 echo
 echo "--- vless:// links (VLESS+Reality, TCP — works everywhere, ~3 RTT handshake) ---"
 echo "relay  (via primary): ${vless_link_relay}"
@@ -131,8 +131,7 @@ cat <<EOF
         "utls": { "enabled": true, "fingerprint": "${REALITY_FINGERPRINT}" },
         "reality": { "enabled": true, "public_key": "${REALITY_PUBLIC_KEY}", "short_id": "${SID}" }
       }
-    }
-  ],
+    },
     {
       "type": "hysteria2",
       "tag": "edge-relay-hy2",
@@ -172,5 +171,5 @@ cat <<EOF
 }
 EOF
 echo
-echo "# Tip: switch mode by changing the route rule outbound to \"edge-direct\","
+echo "# Tip: switch mode by changing the route rule outbound to \"edge-direct-hy2\" or \"edge-direct\","
 echo "#      or pick the other proxy in the Clash AI-sites group."

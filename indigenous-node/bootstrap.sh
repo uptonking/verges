@@ -178,6 +178,7 @@ fi
 	echo "VLESS_UUID=${VLESS_UUID}"
 	echo "REALITY_PRIVATE_KEY=${REALITY_PRIVATE_KEY}"
 	echo "REALITY_PUBLIC_KEY=${REALITY_PUBLIC_KEY}"
+	echo "HY2_PASSWORD=${HY2_PASSWORD}"
 } > .env
 chmod 600 .env
 echo "updated .env with generated secrets"
@@ -192,9 +193,6 @@ if ! timeout 10 openssl s_client -connect "${REALITY_DEST}" -servername "${REALI
 	echo "WARN: Reality destination ${REALITY_DEST} did not respond with TLS 1.3. Continuing anyway." >&2
 fi
 
-# --- create/update inbound ---
-./deploy.sh
-
 # --- firewall ---
 ufw default deny incoming >/dev/null 2>&1 || true
 ufw allow 22/tcp comment 'SSH' >/dev/null
@@ -204,6 +202,7 @@ fi
 if [ "${RELAY_INBOUND_ENABLE}" = "1" ]; then
 	ufw allow "${RELAY_VLESS_PORT}/tcp" comment 'VLESS+Reality relay (gost target)' >/dev/null
 fi
+ufw allow "${HY2_PORT}/udp" comment 'Hysteria2 QUIC' >/dev/null
 # 3x-ui subscription server defaults to loopback; block it explicitly inbound just in case.
 # ufw allow "${XUI_PANEL_PORT}/tcp" comment '3x-ui panel (loopback-only anyway)' >/dev/null
 ufw --force enable
@@ -217,22 +216,8 @@ systemctl enable x-ui
 systemctl enable xui-backup.timer
 systemctl start xui-backup.timer
 
-# --- hysteria2 (QUIC) standalone server ---
-install_hysteria
-
-# self-signed ECDSA cert for hy2 (client pins/verifies via password; small + fast)
-if [ ! -f "${HY2_CERT}" ] || [ ! -f "${HY2_KEY}" ]; then
-	mkdir -p "$(dirname "${HY2_CERT}")"
-	openssl ecparam -genkey -name prime256v1 -out "${HY2_KEY}"
-	openssl req -x509 -new -key "${HY2_KEY}" -sha256 -days 3650 \
-		-subj "/CN=${NODE_HOST}" \
-		-addext "subjectAltName=DNS:${NODE_HOST}" \
-		-out "${HY2_CERT}"
-	chmod 600 "${HY2_KEY}"
-	echo "generated hy2 self-signed cert for ${NODE_HOST}"
-fi
-
-ufw allow "${HY2_PORT}/udp" comment 'Hysteria2 QUIC' >/dev/null
+# --- create/update inbounds and services ---
+./deploy.sh
 
 # --- apt cleanup ---
 apt-get clean

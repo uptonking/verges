@@ -137,6 +137,7 @@ fi
 
 # --- hysteria2 (QUIC) standalone server ---
 install_hysteria
+ensure_hy2_certs
 
 if [ -f "${HY2_CERT}" ] && [ -f "${HY2_KEY}" ]; then
 	mkdir -p "${GENERATED_DIR}"
@@ -158,8 +159,6 @@ if [ -f "${HY2_CERT}" ] && [ -f "${HY2_KEY}" ]; then
 		rm -f "$TMP_HY2"
 		echo "hysteria2 config unchanged — left running (udp/${HY2_PORT})"
 	fi
-else
-	echo "WARN: hy2 certs missing — run ./bootstrap.sh to generate them" >&2
 fi
 
 # Ensure xray picks up changes.

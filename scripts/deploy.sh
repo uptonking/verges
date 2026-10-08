@@ -35,3 +35,9 @@ if [ "$VERGES_ENABLED" -eq 1 ]; then
 	echo "client URI:"
 	client_uri
 fi
+if [ "$FORWARD_ENABLED" -eq 1 ]; then
+	echo
+	echo "relay entry: ${FORWARD_ENTRY}"
+	echo "  tcp -> ${FORWARD_TARGET} (VLESS+Reality)"
+	echo "  udp -> ${FORWARD_TARGET_UDP} (hysteria2)"
+fi
