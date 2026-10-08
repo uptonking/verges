@@ -13,7 +13,7 @@
       {
         "id": "${VLESS_UUID}",
         "flow": "xtls-rprx-vision",
-        "email": "${VLESS_EMAIL}",
+        "email": "${INBOUND_EMAIL}",
         "limitIp": 0,
         "totalGB": 0,
         "expiryTime": 0,

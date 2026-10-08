@@ -75,11 +75,17 @@ upsert_inbound() {
 		enable_bool="true"
 	fi
 
-	export INBOUND_PORT="$port" INBOUND_TAG="$tag" INBOUND_REMARK="$remark" INBOUND_ENABLE="$enable_bool"
+	# 3x-ui requires unique client emails across inbounds.
+	local email="${VLESS_EMAIL}"
+	if [ "$tag" = "${RELAY_VLESS_TAG}" ]; then
+		email="${VLESS_EMAIL}+relay"
+	fi
+
+	export INBOUND_PORT="$port" INBOUND_TAG="$tag" INBOUND_REMARK="$remark" INBOUND_ENABLE="$enable_bool" INBOUND_EMAIL="$email"
 
 	local payload
 	payload="$(mktemp)"
-	envsubst '${INBOUND_PORT} ${INBOUND_TAG} ${INBOUND_REMARK} ${INBOUND_ENABLE} ${VLESS_UUID} ${VLESS_EMAIL} ${REALITY_DEST} ${REALITY_SNI} ${REALITY_FINGERPRINT} ${REALITY_SHORT_IDS_JSON} ${REALITY_PRIVATE_KEY} ${REALITY_PUBLIC_KEY}' \
+	envsubst '${INBOUND_PORT} ${INBOUND_TAG} ${INBOUND_REMARK} ${INBOUND_ENABLE} ${INBOUND_EMAIL} ${VLESS_UUID} ${REALITY_DEST} ${REALITY_SNI} ${REALITY_FINGERPRINT} ${REALITY_SHORT_IDS_JSON} ${REALITY_PRIVATE_KEY} ${REALITY_PUBLIC_KEY}' \
 		< lib/inbound.json.template \
 		> "$payload"
 
