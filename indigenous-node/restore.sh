@@ -34,6 +34,12 @@ if [ -f "$TMP$SCRIPT_DIR/.env" ]; then
 	chmod 600 "$SCRIPT_DIR/.env"
 fi
 
+# hysteria2 certs (fresh node has none; without them the hy2 service can't start)
+if [ -d "$TMP$SCRIPT_DIR/certs" ]; then
+	mkdir -p "$SCRIPT_DIR/certs"
+	cp -a "$TMP$SCRIPT_DIR/certs/." "$SCRIPT_DIR/certs/"
+fi
+
 systemctl start x-ui
 sleep 3
 ./deploy.sh

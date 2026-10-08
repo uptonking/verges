@@ -42,8 +42,8 @@
     }
   },
   "sniffing": {
-    "enabled": true,
-    "destOverride": ["http", "tls", "quic", "fakedns"]
+    "enabled": false,
+    "destOverride": ["http", "tls", "quic"]
   },
   "tag": "${INBOUND_TAG}"
 }

@@ -218,18 +218,6 @@ systemctl enable xui-backup.timer
 systemctl start xui-backup.timer
 
 # --- hysteria2 (QUIC) standalone server ---
-install_hysteria() {
-	local want="${HY2_VERSION#app/}"
-	if [ -x /usr/local/bin/hysteria ] && /usr/local/bin/hysteria version 2>/dev/null | grep -q "${want}"; then
-		return 0
-	fi
-	echo "installing hysteria ${HY2_VERSION} ..."
-	local tmp
-	tmp="$(mktemp -d)"
-	curl -fsSL -o "${tmp}/hysteria" "https://github.com/apernet/hysteria/releases/download/${HY2_VERSION}/hysteria-linux-amd64"
-	install -m 0755 "${tmp}/hysteria" /usr/local/bin/hysteria
-	rm -rf "${tmp}"
-}
 install_hysteria
 
 # self-signed ECDSA cert for hy2 (client pins/verifies via password; small + fast)

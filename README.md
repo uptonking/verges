@@ -109,20 +109,27 @@ Works with any Hysteria2 client (official CLI, sing-box, Clash.Meta, Stash, Shad
 When the primary VPS has poor IP quality for some services, enable the `forward` profile and deploy a separate small VPS with `indigenous-node/`.
 
 ```text
-Two client modes, same credentials (UUID / public key / short id):
+Four client modes, two transports:
 
-relay  : client ──► edge.<domain>:8443 ──► primary gost ──► indigenous:8443 (relay inbound)
-direct : client ─────────────────────────► edge-direct.<domain>:443 (direct inbound)
+VLESS+Reality (TCP fallback, ~3-RTT handshake):
+  relay  : client ──► edge.<domain>:8443 ──► primary gost tcp ──► indigenous:8443
+  direct : client ───────────────────────► edge-direct.<domain>:443
+
+Hysteria2/QUIC (low latency, ~1-RTT handshake, needs UDP):
+  relay  : client ──► edge.<domain>:8443/udp ──► primary gost udp ──► indigenous:443/udp
+  direct : client ─────────────────────────► edge-direct.<domain>:443/udp
                                                               │
-                                    indigenous 3x-ui + xray (VLESS+Reality, xtls-rprx-vision)
+                                    indigenous node (3x-ui/xray + standalone hysteria2)
                                                               ▼
                                     Internet (egress IP = indigenous)
 ```
 
+gost relays both protocols on `FORWARD_PORT` (TCP → `FORWARD_TARGET`, UDP → `FORWARD_TARGET_UDP`), so every mode works with or without the primary: if gost is down only the relay modes are affected.
+
 **Switching modes** (see `indigenous-node/README.md`):
 
-1. In the client: pick `edge-relay` or `edge-direct` (both are emitted by `client.sh`).
-2. In the 3x-ui webapp: toggle each inbound's enable switch (takes effect immediately).
+1. In the client: pick any of the four proxies (all emitted by `client.sh`).
+2. In the 3x-ui webapp: toggle each VLESS inbound's enable switch (hysteria2 is standalone, managed by `deploy.sh`).
 3. Via config: set `DIRECT_INBOUND_ENABLE` / `RELAY_INBOUND_ENABLE` in `indigenous-node/config.env`, run `./deploy.sh` (flags are the source of truth).
 4. To disable the whole relay path, remove `forward` from `COMPOSE_PROFILES` on the primary.
 

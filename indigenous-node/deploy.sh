@@ -136,20 +136,30 @@ if [ "${CURRENT_XRAY#v}" != "${XRAY_VERSION#v}" ]; then
 fi
 
 # --- hysteria2 (QUIC) standalone server ---
-if [ -x /usr/local/bin/hysteria ]; then
+install_hysteria
+
+if [ -f "${HY2_CERT}" ] && [ -f "${HY2_KEY}" ]; then
 	mkdir -p "${GENERATED_DIR}"
 	export HY2_CERT HY2_KEY HY2_PORT HY2_PASSWORD
+	TMP_HY2="$(mktemp)"
 	envsubst '${HY2_CERT} ${HY2_KEY} ${HY2_PORT} ${HY2_PASSWORD}' \
 		< lib/hysteria2.yaml.template \
-		> "${GENERATED_DIR}/hysteria2.yaml"
-	chmod 600 "${GENERATED_DIR}/hysteria2.yaml"
+		> "$TMP_HY2"
+	chmod 600 "$TMP_HY2"
 	cp "$SCRIPT_DIR/systemd/hysteria2.service" /etc/systemd/system/
 	systemctl daemon-reload
 	systemctl enable hysteria2 >/dev/null 2>&1
-	systemctl restart hysteria2
-	echo "hysteria2 restarted (udp/${HY2_PORT})"
+	# Restart only when the rendered config actually changed (or unit is down).
+	if ! cmp -s "$TMP_HY2" "${GENERATED_DIR}/hysteria2.yaml" 2>/dev/null || ! systemctl is-active hysteria2 >/dev/null 2>&1; then
+		mv "$TMP_HY2" "${GENERATED_DIR}/hysteria2.yaml"
+		systemctl restart hysteria2
+		echo "hysteria2 restarted (udp/${HY2_PORT})"
+	else
+		rm -f "$TMP_HY2"
+		echo "hysteria2 config unchanged — left running (udp/${HY2_PORT})"
+	fi
 else
-	echo "WARN: /usr/local/bin/hysteria missing — run ./bootstrap.sh to install it" >&2
+	echo "WARN: hy2 certs missing — run ./bootstrap.sh to generate them" >&2
 fi
 
 # Ensure xray picks up changes.

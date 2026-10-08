@@ -71,6 +71,21 @@ xui_cli() {
 	echo "/usr/local/x-ui/x-ui"
 }
 
+# Install (or keep) the pinned hysteria2 binary. Idempotent; downloads only
+# when the binary is missing or its version differs from HY2_VERSION.
+install_hysteria() {
+	local want="${HY2_VERSION#app/}"
+	if [ -x /usr/local/bin/hysteria ] && /usr/local/bin/hysteria version 2>/dev/null | grep -q "${want}"; then
+		return 0
+	fi
+	echo "installing hysteria ${HY2_VERSION} ..."
+	local tmp
+	tmp="$(mktemp -d)"
+	curl -fsSL -o "${tmp}/hysteria" "https://github.com/apernet/hysteria/releases/download/${HY2_VERSION}/hysteria-linux-amd64"
+	install -m 0755 "${tmp}/hysteria" /usr/local/bin/hysteria
+	rm -rf "${tmp}"
+}
+
 xray_bin() {
 	local bin="/usr/local/x-ui/bin/xray-linux-amd64"
 	if [ -x "$bin" ]; then

@@ -20,6 +20,7 @@ if [ -n "${VERGES_HOP_RANGE:-}" ]; then
 fi
 if [ "$FORWARD_ENABLED" -eq 1 ]; then
 	ss -tlnp | grep -E ":${FORWARD_PORT}\b" || true
+	ss -ulnp | grep -E ":${FORWARD_PORT}\b" || true
 fi
 
 echo
@@ -37,5 +38,7 @@ if [ "$VERGES_ENABLED" -eq 1 ]; then
 fi
 if [ "$FORWARD_ENABLED" -eq 1 ]; then
 	echo
-	echo "VLESS+Reality relay entry: ${FORWARD_ENTRY} -> ${FORWARD_TARGET}"
+	echo "relay entry: ${FORWARD_ENTRY}"
+	echo "  tcp -> ${FORWARD_TARGET} (VLESS+Reality)"
+	echo "  udp -> ${FORWARD_TARGET_UDP} (hysteria2)"
 fi
