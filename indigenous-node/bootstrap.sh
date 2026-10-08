@@ -139,17 +139,6 @@ for i in $(seq 1 60); do
 	sleep 1
 done
 
-# --- generate UUID and Reality keys if missing ---
-XRAY_BIN="$(xray_bin)"
-if [ -z "$VLESS_UUID" ] && [ -n "$XRAY_BIN" ] && [ -x "$XRAY_BIN" ]; then
-	VLESS_UUID="$($XRAY_BIN uuid)"
-fi
-if { [ -z "$REALITY_PRIVATE_KEY" ] || [ -z "$REALITY_PUBLIC_KEY" ]; } && [ -n "$XRAY_BIN" ] && [ -x "$XRAY_BIN" ]; then
-	KEYS="$($XRAY_BIN x25519)"
-	REALITY_PRIVATE_KEY="$(echo "$KEYS" | awk '/Private key/{print $NF}')"
-	REALITY_PUBLIC_KEY="$(echo "$KEYS" | awk '/Public key/{print $NF}')"
-fi
-
 # --- mint API token if missing ---
 if [ -z "$XUI_API_TOKEN" ]; then
 	TOKEN_OUT="$(/usr/local/x-ui/x-ui setting -getApiToken -tokenName automation 2>/dev/null || true)"
@@ -160,6 +149,17 @@ if [ -z "$XUI_API_TOKEN" ]; then
 		TOKEN_OUT="$(/usr/local/x-ui/x-ui setting -getApiToken -tokenName automation 2>/dev/null || true)"
 		XUI_API_TOKEN="$(echo "$TOKEN_OUT" | awk '/apiToken:/{print $2}' | head -n1)"
 	fi
+fi
+
+# --- generate UUID and Reality keys if missing ---
+XRAY_BIN="$(xray_bin)"
+if [ -z "$VLESS_UUID" ] && [ -n "$XRAY_BIN" ] && [ -x "$XRAY_BIN" ]; then
+	VLESS_UUID="$($XRAY_BIN uuid)"
+fi
+if { [ -z "$REALITY_PRIVATE_KEY" ] || [ -z "$REALITY_PUBLIC_KEY" ]; } && [ -n "$XUI_API_TOKEN" ]; then
+	KEYS_JSON="$(curl -fsS -H "Authorization: Bearer ${XUI_API_TOKEN}" "$(panel_url)/panel/api/server/getNewX25519Cert")"
+	REALITY_PRIVATE_KEY="$(echo "$KEYS_JSON" | jq -r '.obj.privateKey')"
+	REALITY_PUBLIC_KEY="$(echo "$KEYS_JSON" | jq -r '.obj.publicKey')"
 fi
 
 # Rewrite .env with generated values.
@@ -197,6 +197,9 @@ ufw allow "${VLESS_PORT}/tcp" comment 'VLESS+Reality' >/dev/null
 ufw --force enable
 
 # --- systemd enable ---
+cp "$SCRIPT_DIR/systemd/xui-backup.service" /etc/systemd/system/
+cp "$SCRIPT_DIR/systemd/xui-backup.timer" /etc/systemd/system/
+systemctl daemon-reload
 systemctl enable x-ui
 systemctl enable xui-backup.timer
 systemctl start xui-backup.timer
