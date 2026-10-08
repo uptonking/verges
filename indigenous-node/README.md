@@ -2,12 +2,16 @@
 
 Self-contained automation for a small Debian/Ubuntu VPS running **3x-ui + xray-core** with **VLESS + REALITY** inbounds.
 
-This node is the "good IP" egress point. It serves **two modes** sharing the same UUID / Reality keypair / short ids:
+This node is the "good IP" egress point. Each mode comes in two transports:
 
-| Mode | Client entry | Inbound | Use when |
-|------|--------------|---------|----------|
-| `edge-relay` | `edge.<domain>:8443` (via primary gost) | relay, port `RELAY_VLESS_PORT` (8443) | direct path to this VPS is slow/blocked |
-| `edge-direct` | `edge-direct.<domain>:443` | direct, port `DIRECT_VLESS_PORT` (443) | primary node is down or adds latency |
+| Mode | Client entry | Transport | Latency (from CN) |
+|------|--------------|-----------|-------------------|
+| `edge-direct-hy2` | `edge-direct.<domain>:443` udp | Hysteria2/QUIC (standalone, not 3x-ui) | ~1 RTT — fastest |
+| `edge-relay-hy2` | `edge.<domain>:8443` udp | Hysteria2 via primary gost UDP relay | ~2 RTT (double hop) |
+| `edge-direct` | `edge-direct.<domain>:443` | VLESS+Reality | ~3 RTT (TCP+TLS) |
+| `edge-relay` | `edge.<domain>:8443` | VLESS+Reality via primary gost TCP relay | ~3 RTT + hop |
+
+**Use `edge-direct-hy2` by default.** The VLESS modes are the fallback for networks that block/throttle UDP. All four share the same egress IP and (per transport) credentials.
 
 **Switching modes:**
 
