@@ -99,14 +99,25 @@ upsert_inbound() {
 	local existing_id
 	existing_id="$(api_call GET /panel/api/inbounds/list | jq -r ".obj[] | select(.tag==\"${tag}\") | .id" | head -n1 || true)"
 
+	local inbound_id
 	if [ -n "$existing_id" ]; then
 		echo "updating inbound id=${existing_id} (port=${port}, enable=${enable})"
 		api_call POST "/panel/api/inbounds/update/${existing_id}" -d "@$payload" | jq -r '.msg'
+		inbound_id="$existing_id"
 	else
 		echo "creating inbound (port=${port}, enable=${enable})"
-		api_call POST /panel/api/inbounds/add -d "@$payload" | jq -r '.msg'
+		inbound_id="$(api_call POST /panel/api/inbounds/add -d "@$payload" | jq -r '.obj.id')"
+		echo "created inbound id=${inbound_id}"
 	fi
 	rm -f "$payload"
+
+	# The update/add endpoints ignore the enable field — enforce it explicitly.
+	local current_enable
+	current_enable="$(api_call GET /panel/api/inbounds/list | jq -r ".obj[] | select(.id==${inbound_id}) | .enable")"
+	if [ "$current_enable" != "$enable_bool" ]; then
+		api_call POST "/panel/api/inbounds/setEnable/${inbound_id}" \
+			-d "{\"enable\":${enable_bool}}" | jq -r '.msg'
+	fi
 }
 
 upsert_inbound "${DIRECT_VLESS_PORT}" "${DIRECT_VLESS_TAG}" "${NODE_NAME}-direct" "${DIRECT_INBOUND_ENABLE}"
