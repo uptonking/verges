@@ -13,7 +13,7 @@ OUT="/root/backups/xui-${TS}.tar.gz"
 
 tar czf "$OUT" \
 	/etc/x-ui \
-	/usr/local/xui/bin/config.json \
+	/usr/local/x-ui/bin/config.json \
 	/etc/default/x-ui \
 	"$SCRIPT_DIR/.env" \
 	"$SCRIPT_DIR/config.env" \

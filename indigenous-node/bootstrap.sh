@@ -120,7 +120,7 @@ XUI_LOG_LEVEL=warning
 EOF
 
 # Apply panel listen IP / base path / port / credentials.
-/usr/local/xui/x-ui setting \
+/usr/local/x-ui/x-ui setting \
 	-username "${XUI_PANEL_USERNAME}" \
 	-password "${XUI_PANEL_PASSWORD}" \
 	-port "${XUI_PANEL_PORT}" \
@@ -152,12 +152,12 @@ fi
 
 # --- mint API token if missing ---
 if [ -z "$XUI_API_TOKEN" ]; then
-	TOKEN_OUT="$(/usr/local/xui/x-ui setting -getApiToken -tokenName automation 2>/dev/null || true)"
+	TOKEN_OUT="$(/usr/local/x-ui/x-ui setting -getApiToken -tokenName automation 2>/dev/null || true)"
 	XUI_API_TOKEN="$(echo "$TOKEN_OUT" | awk '/apiToken:/{print $2}' | head -n1)"
 	if [ -z "$XUI_API_TOKEN" ]; then
 		# Retry after a short wait; the panel may still be initializing.
 		sleep 3
-		TOKEN_OUT="$(/usr/local/xui/x-ui setting -getApiToken -tokenName automation 2>/dev/null || true)"
+		TOKEN_OUT="$(/usr/local/x-ui/x-ui setting -getApiToken -tokenName automation 2>/dev/null || true)"
 		XUI_API_TOKEN="$(echo "$TOKEN_OUT" | awk '/apiToken:/{print $2}' | head -n1)"
 	fi
 fi

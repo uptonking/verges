@@ -37,7 +37,7 @@ test_token() {
 
 if [ -z "$API_TOKEN" ] || ! test_token; then
 	echo "minting/regenerating 3x-ui API token ..."
-	TOKEN_OUT="$(/usr/local/xui/x-ui setting -getApiToken -tokenName automation 2>/dev/null || true)"
+	TOKEN_OUT="$(/usr/local/x-ui/x-ui setting -getApiToken -tokenName automation 2>/dev/null || true)"
 	API_TOKEN="$(echo "$TOKEN_OUT" | awk '/apiToken:/{print $2}' | head -n1)"
 	if [ -z "$API_TOKEN" ]; then
 		echo "ERROR: could not obtain 3x-ui API token" >&2

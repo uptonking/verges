@@ -26,7 +26,7 @@ tar xzf "$BACKUP" -C "$TMP"
 systemctl stop x-ui || true
 
 cp -a "$TMP/etc/x-ui" /etc/
-cp -a "$TMP/usr/local/xui/bin/config.json" /usr/local/xui/bin/config.json
+cp -a "$TMP/usr/local/x-ui/bin/config.json" /usr/local/x-ui/bin/config.json
 cp -a "$TMP/etc/default/x-ui" /etc/default/x-ui
 
 if [ -f "$TMP$SCRIPT_DIR/.env" ]; then

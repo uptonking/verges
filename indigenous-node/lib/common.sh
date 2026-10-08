@@ -56,17 +56,17 @@ panel_url() {
 }
 
 xui_cli() {
-	echo "/usr/local/xui/x-ui"
+	echo "/usr/local/x-ui/x-ui"
 }
 
 xray_bin() {
-	local bin="/usr/local/xui/bin/xray-linux-amd64"
+	local bin="/usr/local/x-ui/bin/xray-linux-amd64"
 	if [ -x "$bin" ]; then
 		echo "$bin"
 		return 0
 	fi
 	# fallback: try to find any xray binary in the bin dir
-	ls /usr/local/xui/bin/xray-linux-* 2>/dev/null | head -n1
+	ls /usr/local/x-ui/bin/xray-linux-* 2>/dev/null | head -n1
 }
 
 short_ids_json() {
