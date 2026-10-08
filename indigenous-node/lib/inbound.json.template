@@ -33,6 +33,7 @@
       "serverNames": ["${REALITY_SNI}"],
       "privateKey": "${REALITY_PRIVATE_KEY}",
       "shortIds": ${REALITY_SHORT_IDS_JSON},
+      "minClientVer": "${REALITY_MIN_CLIENT_VER}",
       "settings": {
         "publicKey": "${REALITY_PUBLIC_KEY}",
         "fingerprint": "${REALITY_FINGERPRINT}",
