@@ -103,7 +103,7 @@ export XUI_PASSWORD="${XUI_PANEL_PASSWORD}"
 export XUI_PANEL_PORT="${XUI_PANEL_PORT}"
 export XUI_WEB_BASE_PATH="${XUI_WEB_BASE_PATH}"
 
-if ! bash <(curl -fsSL "https://github.com/MHSanaei/3x-ui/raw/master/install.sh") "${XUI_VERSION}"; then
+if ! bash <(curl -fsSL "https://raw.githubusercontent.com/MHSanaei/3x-ui/main/install.sh") "${XUI_VERSION}"; then
 	echo "ERROR: official 3x-ui install script failed" >&2
 	exit 1
 fi
