@@ -77,7 +77,8 @@ services:
       - "-L"
       - "tcp://:${FORWARD_PORT}/${FORWARD_TARGET}"
       - "-L"
-      - "udp://:${FORWARD_PORT}/${FORWARD_TARGET_UDP}"
+      - "udp://:${FORWARD_PORT}/${FORWARD_TARGET_UDP}?keepAlive=true&ttl=60s"
+
 
 networks:
   shared_network:
