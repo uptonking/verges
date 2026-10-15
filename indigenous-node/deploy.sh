@@ -135,7 +135,7 @@ fi
 # --- enforce optimized Xray template in 3x-ui database ---
 if [ -f "$SCRIPT_DIR/lib/xray-template.json" ] && [ -f /etc/x-ui/x-ui.db ] && command -v sqlite3 >/dev/null 2>&1; then
 	TEMPLATE_VAL="$(tr -d '\n' < "$SCRIPT_DIR/lib/xray-template.json" | sed "s/'/''/g")"
-	sqlite3 /etc/x-ui/x-ui.db "INSERT INTO settings (key, value) VALUES ('xrayTemplateConfig', '${TEMPLATE_VAL}') ON CONFLICT(key) DO UPDATE SET value=excluded.value;"
+	sqlite3 /etc/x-ui/x-ui.db "BEGIN; DELETE FROM settings WHERE key='xrayTemplateConfig'; INSERT INTO settings (key, value) VALUES ('xrayTemplateConfig', '${TEMPLATE_VAL}'); COMMIT;"
 fi
 
 # --- enforce pinned xray-core version (panel updates reset it to the bundled one) ---
