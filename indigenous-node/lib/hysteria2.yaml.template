@@ -13,3 +13,10 @@ masquerade:
   proxy:
     url: https://www.bing.com
     rewriteHost: true
+
+outbounds:
+  - name: default
+    type: direct
+    direct:
+      mode: 46
+
