@@ -29,3 +29,10 @@ masquerade:
     url: https://127.0.0.1
     rewriteHost: true
     insecure: true
+
+outbounds:
+  - name: default
+    type: direct
+    direct:
+      mode: 46
+      fastOpen: true
