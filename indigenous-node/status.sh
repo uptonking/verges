@@ -25,7 +25,7 @@ echo
 echo "=== xray version ==="
 XRAY_BIN="$(xray_bin || true)"
 if [ -n "$XRAY_BIN" ] && [ -x "$XRAY_BIN" ]; then
-	"$XRAY_BIN" -version 2>/dev/null | head -n3 || true
+	("$XRAY_BIN" -version 2>/dev/null || true) | head -n3
 else
 	echo "xray binary not found"
 fi
@@ -44,7 +44,7 @@ fi
 
 echo
 echo "=== resources ==="
-free -m | head -2
+(free -m || true) | head -2
 df -h /
 
 echo
