@@ -124,9 +124,19 @@ upsert_inbound() {
 upsert_inbound "${DIRECT_VLESS_PORT}" "${DIRECT_VLESS_TAG}" "${NODE_NAME}-direct" "${DIRECT_INBOUND_ENABLE}"
 upsert_inbound "${RELAY_VLESS_PORT}" "${RELAY_VLESS_TAG}" "${NODE_NAME}-relay" "${RELAY_INBOUND_ENABLE}"
 
-# Try to set lean xray log config via settings API (best-effort).
-api_call POST /panel/api/setting/updateXrayTemplate \
-	-d '{"log":{"access":"none","loglevel":"warning","dnsLog":false}}' >/dev/null 2>&1 || true
+# --- ensure systemd-resolved DNS cache is active ---
+if systemctl list-unit-files systemd-resolved.service >/dev/null 2>&1; then
+	systemctl enable --now systemd-resolved >/dev/null 2>&1 || true
+	if [ -f /run/systemd/resolve/stub-resolv.conf ] && [ "$(readlink -f /etc/resolv.conf 2>/dev/null)" != "/run/systemd/resolve/stub-resolv.conf" ]; then
+		ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+	fi
+fi
+
+# --- enforce optimized Xray template in 3x-ui database ---
+if [ -f "$SCRIPT_DIR/lib/xray-template.json" ] && [ -f /etc/x-ui/x-ui.db ] && command -v sqlite3 >/dev/null 2>&1; then
+	TEMPLATE_VAL="$(tr -d '\n' < "$SCRIPT_DIR/lib/xray-template.json" | sed "s/'/''/g")"
+	sqlite3 /etc/x-ui/x-ui.db "INSERT INTO settings (key, value) VALUES ('xrayTemplateConfig', '${TEMPLATE_VAL}') ON CONFLICT(key) DO UPDATE SET value=excluded.value;"
+fi
 
 # --- enforce pinned xray-core version (panel updates reset it to the bundled one) ---
 CURRENT_XRAY="$( ("$(xray_bin)" -version 2>/dev/null || true) | awk 'NR==1{print $2}')"

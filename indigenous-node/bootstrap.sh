@@ -59,6 +59,14 @@ if [ -f /etc/gai.conf ]; then
 	sed -i 's/#precedence ::ffff:0:0\/96  100/precedence ::ffff:0:0\/96  100/' /etc/gai.conf
 fi
 
+# Enable local DNS caching via systemd-resolved
+if systemctl list-unit-files systemd-resolved.service >/dev/null 2>&1; then
+	systemctl enable --now systemd-resolved >/dev/null 2>&1 || true
+	if [ -f /run/systemd/resolve/stub-resolv.conf ]; then
+		ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+	fi
+fi
+
 
 # Swap: only if enabled and enough free disk.
 source config.env 2>/dev/null || true
