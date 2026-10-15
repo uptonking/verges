@@ -41,6 +41,12 @@ net.ipv4.tcp_notsent_lowat=16384
 EOF
 sysctl --system
 
+# Prefer IPv4 over IPv6 in getaddrinfo to avoid stalls on flaky IPv6 routes
+if [ -f /etc/gai.conf ]; then
+	sed -i 's/#precedence ::ffff:0:0\/96  100/precedence ::ffff:0:0\/96  100/' /etc/gai.conf
+fi
+
+
 # Swap: only if enabled and enough free disk.
 source config.env 2>/dev/null || true
 SWAP_SIZE_MB="${SWAP_SIZE_MB:-256}"
