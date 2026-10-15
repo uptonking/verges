@@ -35,11 +35,24 @@ apt-get install -y -q curl jq openssl gettext-base ufw git
 # --- system tuning ---
 SYSCTL_FILE="/etc/sysctl.d/99-indigenous-tuning.conf"
 cat > "$SYSCTL_FILE" <<'EOF'
-net.ipv4.tcp_congestion_control=bbr
-net.core.default_qdisc=fq
-net.ipv4.tcp_notsent_lowat=16384
+net.ipv4.tcp_congestion_control = bbr
+net.core.default_qdisc = fq
+net.ipv4.tcp_fastopen = 3
+net.ipv4.tcp_notsent_lowat = 16384
+net.ipv4.tcp_slow_start_after_idle = 0
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.ipv4.tcp_rmem = 4096 87380 16777216
+net.ipv4.tcp_wmem = 4096 65536 16777216
+net.ipv4.tcp_window_scaling = 1
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 15
+net.core.somaxconn = 32768
+net.core.netdev_max_backlog = 10000
+net.ipv4.tcp_max_syn_backlog = 8192
 EOF
 sysctl --system
+
 
 # Prefer IPv4 over IPv6 in getaddrinfo to avoid stalls on flaky IPv6 routes
 if [ -f /etc/gai.conf ]; then

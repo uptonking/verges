@@ -39,8 +39,14 @@
         "fingerprint": "${REALITY_FINGERPRINT}",
         "spiderX": "/"
       }
+    },
+    "sockopt": {
+      "tcpFastOpen": true,
+      "tcpCongestion": "bbr",
+      "domainStrategy": "UseIPv4"
     }
   },
+
   "sniffing": {
     "enabled": false,
     "destOverride": ["http", "tls", "quic"]

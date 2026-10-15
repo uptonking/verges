@@ -38,6 +38,7 @@ vless_proxy_yaml() {
       public-key: ${REALITY_PUBLIC_KEY}
       short-id: ${SID}
     client-fingerprint: ${REALITY_FINGERPRINT}
+    tfo: true
 EOF
 }
 
