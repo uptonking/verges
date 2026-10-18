@@ -1,4 +1,4 @@
-listen: :${HY2_PORT}
+listen: :${HY2_PORT},20000-30000
 
 tls:
   cert: ${HY2_CERT}
@@ -7,6 +7,16 @@ tls:
 auth:
   type: password
   password: ${HY2_PASSWORD}
+
+ignoreClientBandwidth: true
+
+quic:
+  initStreamReceiveWindow: 8388608
+  maxStreamReceiveWindow: 8388608
+  initConnReceiveWindow: 20971520
+  maxConnReceiveWindow: 20971520
+  maxIdleTimeout: 60s
+  keepAlivePeriod: 10s
 
 masquerade:
   type: proxy

@@ -14,6 +14,15 @@ cd "$SCRIPT_DIR"
 
 echo "=== indigenous-node deploy ==="
 
+# --- git pull desired state if git repo ---
+if [ -d "$SCRIPT_DIR/../.git" ]; then
+	git -C "$SCRIPT_DIR/.." pull --ff-only 2>/dev/null || true
+fi
+
+# --- system and firewall tuning ---
+tune_system
+ensure_firewall
+
 # --- ensure x-ui is running ---
 if ! systemctl is-active x-ui >/dev/null 2>&1; then
 	systemctl start x-ui

@@ -5,11 +5,13 @@ After=network.target
 [Service]
 Type=simple
 Environment=GOGC=50
-Environment=GOMEMLIMIT=96MiB
+Environment=GOMEMLIMIT=256MiB
 ExecStart=/usr/local/bin/hysteria server -c /opt/verges/indigenous-node/generated/hysteria2.yaml
 Restart=always
 RestartSec=3s
 LimitNOFILE=1000000
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
 
 [Install]
 WantedBy=multi-user.target

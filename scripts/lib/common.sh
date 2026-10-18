@@ -101,13 +101,14 @@ net.ipv6.conf.all.disable_ipv6 = 1
 net.ipv6.conf.default.disable_ipv6 = 1
 net.ipv6.conf.lo.disable_ipv6 = 1
 
-# Buffer sizes for high BDP paths (up to 32MB UDP/TCP buffers)
-net.core.rmem_max = 33554432
-net.core.wmem_max = 33554432
+# Buffer sizes for high BDP paths (up to 64MB UDP/TCP buffers)
+net.core.rmem_max = 67108864
+net.core.wmem_max = 67108864
 net.core.rmem_default = 1048576
 net.core.wmem_default = 1048576
-net.ipv4.tcp_rmem = 4096 87380 33554432
-net.ipv4.tcp_wmem = 4096 65536 33554432
+net.ipv4.tcp_rmem = 4096 87380 67108864
+net.ipv4.tcp_wmem = 4096 65536 67108864
+net.ipv4.tcp_moderate_rcvbuf = 1
 net.ipv4.udp_rmem_min = 16384
 net.ipv4.udp_wmem_min = 16384
 

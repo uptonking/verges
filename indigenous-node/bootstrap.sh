@@ -38,16 +38,20 @@ cat > "$SYSCTL_FILE" <<'EOF'
 net.ipv4.tcp_congestion_control = bbr
 net.core.default_qdisc = fq
 net.ipv4.tcp_fastopen = 3
+net.core.rmem_max = 67108864
+net.core.wmem_max = 67108864
+net.core.rmem_default = 1048576
+net.core.wmem_default = 1048576
+net.ipv4.tcp_rmem = 4096 87380 67108864
+net.ipv4.tcp_wmem = 4096 65536 67108864
+net.ipv4.tcp_moderate_rcvbuf = 1
+net.ipv4.udp_rmem_min = 16384
+net.ipv4.udp_wmem_min = 16384
 net.ipv4.tcp_notsent_lowat = 16384
 net.ipv4.tcp_slow_start_after_idle = 0
-net.core.rmem_max = 16777216
-net.core.wmem_max = 16777216
-net.ipv4.tcp_rmem = 4096 87380 16777216
-net.ipv4.tcp_wmem = 4096 65536 16777216
-net.ipv4.tcp_window_scaling = 1
 net.ipv4.tcp_tw_reuse = 1
 net.ipv4.tcp_fin_timeout = 15
-net.core.somaxconn = 32768
+net.core.somaxconn = 65535
 net.core.netdev_max_backlog = 10000
 net.ipv4.tcp_max_syn_backlog = 8192
 EOF
@@ -230,6 +234,7 @@ if [ "${RELAY_INBOUND_ENABLE}" = "1" ]; then
 	ufw allow "${RELAY_VLESS_PORT}/tcp" comment 'VLESS+Reality relay (gost target)' >/dev/null
 fi
 ufw allow "${HY2_PORT}/udp" comment 'Hysteria2 QUIC' >/dev/null
+ufw allow 20000:30000/udp comment 'Hysteria2 port hopping' >/dev/null
 # 3x-ui subscription server defaults to loopback; block it explicitly inbound just in case.
 # ufw allow "${XUI_PANEL_PORT}/tcp" comment '3x-ui panel (loopback-only anyway)' >/dev/null
 ufw --force enable
