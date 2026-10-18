@@ -85,6 +85,55 @@ check_dns() {
 	fi
 }
 
+tune_system() {
+	local sysctl_file="/etc/sysctl.d/99-verges-tuning.conf"
+	if [ -w /etc/sysctl.d ]; then
+		cat > "$sysctl_file" <<'EOF'
+# BBR and queue discipline
+net.ipv4.tcp_congestion_control = bbr
+net.core.default_qdisc = fq
+
+# TCP Fast Open (3 = client + server)
+net.ipv4.tcp_fastopen = 3
+
+# Disable broken/unreachable IPv6 to eliminate lookup & fallback latency
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+
+# Buffer sizes for high BDP paths (up to 32MB UDP/TCP buffers)
+net.core.rmem_max = 33554432
+net.core.wmem_max = 33554432
+net.core.rmem_default = 1048576
+net.core.wmem_default = 1048576
+net.ipv4.tcp_rmem = 4096 87380 33554432
+net.ipv4.tcp_wmem = 4096 65536 33554432
+net.ipv4.udp_rmem_min = 16384
+net.ipv4.udp_wmem_min = 16384
+
+# Latency, socket recycling, and network backlog
+net.ipv4.tcp_notsent_lowat = 16384
+net.ipv4.tcp_slow_start_after_idle = 0
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 15
+net.core.somaxconn = 65535
+net.core.netdev_max_backlog = 10000
+net.ipv4.tcp_max_syn_backlog = 8192
+EOF
+		sysctl --system >/dev/null 2>&1 || true
+		echo "applied sysctl tuning ($sysctl_file)"
+	fi
+
+	local iface
+	iface="$(ip route show default 2>/dev/null | awk '/default/ {print $5}' | head -n1 || true)"
+	if [ -n "$iface" ]; then
+		ip link set dev "$iface" mtu 1500 2>/dev/null || true
+		ip link set dev "$iface" txqueuelen 10000 2>/dev/null || true
+		tc qdisc replace dev "$iface" root fq 2>/dev/null || true
+		echo "tuned interface $iface (mtu 1500, txqueuelen 10000, qdisc fq)"
+	fi
+}
+
 gen_configs() {
 	command -v envsubst >/dev/null 2>&1 || {
 		echo "ERROR: envsubst not found — install with: apt-get install -y gettext-base" >&2

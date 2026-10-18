@@ -86,42 +86,7 @@ fi
 . "$REPO_DIR/scripts/lib/common.sh"
 
 	check_dns
-
-	# --- system tuning ---
-	SYSCTL_FILE="/etc/sysctl.d/99-verges-tuning.conf"
-	cat > "$SYSCTL_FILE" <<'EOF'
-# BBR and queue discipline
-net.ipv4.tcp_congestion_control = bbr
-net.core.default_qdisc = fq
-
-# TCP Fast Open (3 = client + server)
-net.ipv4.tcp_fastopen = 3
-
-# Disable broken/unreachable IPv6 to eliminate lookup & fallback latency
-net.ipv6.conf.all.disable_ipv6 = 1
-net.ipv6.conf.default.disable_ipv6 = 1
-net.ipv6.conf.lo.disable_ipv6 = 1
-
-# Buffer sizes for high BDP paths
-net.core.rmem_max = 16777216
-net.core.wmem_max = 16777216
-net.core.rmem_default = 262144
-net.core.wmem_default = 262144
-net.ipv4.tcp_rmem = 4096 87380 16777216
-net.ipv4.tcp_wmem = 4096 65536 16777216
-net.ipv4.udp_rmem_min = 8192
-net.ipv4.udp_wmem_min = 8192
-
-# Latency and socket recycling
-net.ipv4.tcp_notsent_lowat = 16384
-net.ipv4.tcp_slow_start_after_idle = 0
-net.ipv4.tcp_tw_reuse = 1
-net.ipv4.tcp_fin_timeout = 15
-net.core.somaxconn = 32768
-net.core.netdev_max_backlog = 10000
-net.ipv4.tcp_max_syn_backlog = 8192
-EOF
-	sysctl --system >/dev/null 2>&1 || true
+	tune_system
 
 	# --- firewall ---
 # NOTE: docker-published ports bypass ufw (docker's iptables rules run

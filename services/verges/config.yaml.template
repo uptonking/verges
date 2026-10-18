@@ -7,6 +7,19 @@
 # DNAT to redirect the range back to the main port (requires NET_ADMIN).
 listen: :443,${VERGES_HOP_RANGE}
 
+# Ignore client-declared bandwidth rate limits (e.g. 30 Mbps from Clash)
+# and let BBR probe maximum path capacity.
+ignoreClientBandwidth: true
+
+# QUIC transport tuning for high BDP paths and NAT keep-alive
+quic:
+  initStreamReceiveWindow: 8388608
+  maxStreamReceiveWindow: 8388608
+  initConnReceiveWindow: 20971520
+  maxConnReceiveWindow: 20971520
+  maxIdleTimeout: 30s
+  keepAlivePeriod: 10s
+
 auth:
   type: password
   password: ${VERGES_PASSWORD}

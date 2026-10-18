@@ -11,6 +11,7 @@ git pull --ff-only
 # shellcheck source=scripts/lib/common.sh
 . scripts/lib/common.sh
 
+tune_system
 check_dns
 gen_configs
 compose up -d --remove-orphans
