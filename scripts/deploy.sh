@@ -15,6 +15,10 @@ check_dns
 gen_configs
 compose up -d --remove-orphans
 
+if [ "$VERGES_ENABLED" -eq 1 ]; then
+	compose restart verges
+fi
+
 # Compose profiles are a start gate, not a stop gate: an active profile
 # that becomes inactive may leave its container running. Stop + remove it
 # idempotently (these commands are no-ops if the container is already gone).
