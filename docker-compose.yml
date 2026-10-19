@@ -42,6 +42,7 @@ services:
       HYSTERIA_DISABLE_UPDATE_CHECK: "true"
       GOMAXPROCS: "2"
       GOMEMLIMIT: "512MiB"
+      QUIC_GO_DISABLE_GSO: "true"
     volumes:
       - ./data/caddy:/caddy-data:ro # Caddy cert storage, read-only
       - ./services/verges:/etc/hysteria:ro

@@ -131,7 +131,10 @@ EOF
 		ip link set dev "$iface" mtu 1500 2>/dev/null || true
 		ip link set dev "$iface" txqueuelen 10000 2>/dev/null || true
 		tc qdisc replace dev "$iface" root fq 2>/dev/null || true
-		echo "tuned interface $iface (mtu 1500, txqueuelen 10000, qdisc fq)"
+		if command -v ethtool >/dev/null 2>&1; then
+			ethtool -K "$iface" tx-udp-segmentation off 2>/dev/null || true
+		fi
+		echo "tuned interface $iface (mtu 1500, txqueuelen 10000, qdisc fq, tx-udp-segmentation off)"
 	fi
 }
 
