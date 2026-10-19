@@ -87,6 +87,32 @@ install_hysteria() {
 }
 
 ensure_hy2_certs() {
+	local le_cert="/etc/letsencrypt/live/${NODE_HOST}/fullchain.pem"
+	local le_key="/etc/letsencrypt/live/${NODE_HOST}/privkey.pem"
+	if [ -f "$le_cert" ] && [ -f "$le_key" ]; then
+		mkdir -p "$(dirname "${HY2_CERT}")"
+		ln -sf "$le_cert" "${HY2_CERT}"
+		ln -sf "$le_key" "${HY2_KEY}"
+		echo "using Let's Encrypt cert for ${NODE_HOST}"
+		return 0
+	fi
+
+	if command -v certbot >/dev/null 2>&1; then
+		echo "requesting Let's Encrypt certificate for ${NODE_HOST}..."
+		if certbot certonly --standalone -d "${NODE_HOST}" --non-interactive --agree-tos --register-unsafely-without-email >/dev/null 2>&1; then
+			mkdir -p "$(dirname "${HY2_CERT}")" /etc/letsencrypt/renewal-hooks/post
+			ln -sf "$le_cert" "${HY2_CERT}"
+			ln -sf "$le_key" "${HY2_KEY}"
+			cat << 'HOOK_EOF' > /etc/letsencrypt/renewal-hooks/post/restart-hysteria2.sh
+#!/bin/sh
+systemctl restart hysteria2
+HOOK_EOF
+			chmod +x /etc/letsencrypt/renewal-hooks/post/restart-hysteria2.sh
+			echo "successfully issued Let's Encrypt cert for ${NODE_HOST}"
+			return 0
+		fi
+	fi
+
 	if [ ! -f "${HY2_CERT}" ] || [ ! -f "${HY2_KEY}" ]; then
 		mkdir -p "$(dirname "${HY2_CERT}")"
 		openssl ecparam -genkey -name prime256v1 -out "${HY2_KEY}"
@@ -173,6 +199,10 @@ ensure_firewall() {
 		if ! ufw status 2>/dev/null | grep -q "20000:30000/udp"; then
 			ufw allow 20000:30000/udp comment 'Hysteria2 port hopping' >/dev/null 2>&1 || true
 			echo "allowed 20000:30000/udp in ufw"
+		fi
+		if ! ufw status 2>/dev/null | grep -q "80/tcp"; then
+			ufw allow 80/tcp comment 'HTTP ACME' >/dev/null 2>&1 || true
+			echo "allowed 80/tcp in ufw"
 		fi
 	fi
 }
