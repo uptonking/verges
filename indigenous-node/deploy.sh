@@ -141,11 +141,11 @@ if systemctl list-unit-files systemd-resolved.service >/dev/null 2>&1; then
 	fi
 fi
 
-# --- enforce optimized Xray template in 3x-ui database ---
-if [ -f "$SCRIPT_DIR/lib/xray-template.json" ] && [ -f /etc/x-ui/x-ui.db ] && command -v sqlite3 >/dev/null 2>&1; then
-	TEMPLATE_VAL="$(tr -d '\n' < "$SCRIPT_DIR/lib/xray-template.json" | sed "s/'/''/g")"
-	sqlite3 /etc/x-ui/x-ui.db "BEGIN; DELETE FROM settings WHERE key='xrayTemplateConfig'; INSERT INTO settings (key, value) VALUES ('xrayTemplateConfig', '${TEMPLATE_VAL}'); COMMIT;"
-fi
+	# --- enforce optimized Xray template in 3x-ui database ---
+	if [ -f "$SCRIPT_DIR/lib/xray-template.json" ] && [ -f /etc/x-ui/x-ui.db ] && command -v sqlite3 >/dev/null 2>&1; then
+		TEMPLATE_VAL="$(tr -d '\n' < "$SCRIPT_DIR/lib/xray-template.json" | sed "s/'/''/g")"
+		sqlite3 -cmd ".timeout 5000" /etc/x-ui/x-ui.db "BEGIN; DELETE FROM settings WHERE key='xrayTemplateConfig'; INSERT INTO settings (key, value) VALUES ('xrayTemplateConfig', '${TEMPLATE_VAL}'); COMMIT;" || true
+	fi
 
 # --- enforce pinned xray-core version (panel updates reset it to the bundled one) ---
 CURRENT_XRAY="$( ("$(xray_bin)" -version 2>/dev/null || true) | awk 'NR==1{print $2}')"
