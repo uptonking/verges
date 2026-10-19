@@ -17,6 +17,7 @@ quic:
   maxConnReceiveWindow: 20971520
   maxIdleTimeout: 60s
   keepAlivePeriod: 10s
+  disablePathMTUDiscovery: true
 
 masquerade:
   type: proxy

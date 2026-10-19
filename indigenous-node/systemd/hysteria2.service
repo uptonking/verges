@@ -6,6 +6,7 @@ After=network.target
 Type=simple
 Environment=GOGC=50
 Environment=GOMEMLIMIT=256MiB
+Environment=QUIC_GO_DISABLE_GSO=true
 ExecStart=/usr/local/bin/hysteria server -c /opt/verges/indigenous-node/generated/hysteria2.yaml
 Restart=always
 RestartSec=3s
